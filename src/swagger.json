@@ -1,0 +1,717 @@
+{
+  "openapi": "3.0.0",
+  "components": {
+    "schemas": {
+      "Auth": {
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "Users": {
+        "properties": {
+          "firstName": { "type": "string" },
+          "lastName": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "password": { "type": "string" }
+        }
+      },
+      "Restaurants": {
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "string"
+          },
+          "cnpj": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "units": {
+            "type": "Array",
+            "manager": {
+              "type": "string"
+            },
+            "address": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "info": {
+    "title": "Seu Garçom Docs",
+    "version": "0.0.1",
+    "description": "Seu Garçom Swagger Docs"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3333/v0",
+      "description": "Test API"
+    }
+  ],
+  "paths": {
+    "/login": {
+      "post": {
+        "summary": "User login",
+        "description": "Endpoint for login",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "body",
+          "email": "string",
+          "password": "string"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Auth"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "email": "jubinilson_godinilson@gmail.com",
+                    "password": "senha123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "400": {
+            "description": "User already exists"
+          },
+          "200": {
+            "description": "Logged in!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "Object",
+                  "items": {
+                    "$ref": "#/components/schemas/Auth"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/register": {
+      "post": {
+        "summary": "User register",
+        "description": "Endpoint for register",
+        "tags": ["Auth"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "body",
+          "firstName": "string",
+          "lastName": "string",
+          "email": "string",
+          "phone": "string",
+          "password": "string"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Auth"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "firstName": "Fulano",
+                    "lastName": "Cicrano",
+                    "email": "jubinilson_godinilson@gmail.com",
+                    "phone": "+5583999998888",
+                    "password": "senha123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "409": {
+            "description": "User already exists"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "Object",
+                  "items": {
+                    "$ref": "#/components/schemas/Users"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/create": {
+      "post": {
+        "summary": "User register for admin",
+        "description": "Endpoint for register",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "body",
+          "firstName": "string",
+          "lastName": "string",
+          "email": "string",
+          "phone": "string",
+          "password": "string"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Users"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "firstName": "Fulano",
+                    "lastName": "Cicrano",
+                    "email": "jubinilson_godinilson@gmail.com",
+                    "phone": "+5583999998888",
+                    "password": "senha123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "409": {
+            "description": "User already exists"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "Object",
+                  "items": {
+                    "$ref": "#/components/schemas/Users"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/get": {
+      "get": {
+        "summary": "Get all registered Users",
+        "description": "Endpoint for list users",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Users"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "firstName": "Fulano",
+                    "lastName": "Cicrano",
+                    "email": "jubinilson_godinilson@gmail.com",
+                    "phone": "+5583999998888",
+                    "password": "senha123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "Object",
+                  "items": {
+                    "$ref": "#/components/schemas/Users"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/get/:id": {
+      "get": {
+        "summary": "Get registered User by Id",
+        "description": "Endpoint to get user by id",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "id": "id",
+            "name": "name",
+            "in": "query",
+            "description": "User name for search",
+            "required": "true"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Users"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "firstName": "Fulano",
+                    "lastName": "Cicrano",
+                    "email": "jubinilson_godinilson@gmail.com",
+                    "phone": "+5583999998888",
+                    "password": "senha123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Users"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/:id/update": {
+      "patch": {
+        "summary": "Update registered User",
+        "description": "Endpoint to update user",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "id": "number",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Users"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "firstName": "Cicrano",
+                    "lastName": "Cicaranos",
+                    "email": "jubinilson_@gmail.com",
+                    "phone": "+5583999998888",
+                    "password": "senha123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "Object",
+                  "items": {
+                    "$ref": "#/components/schemas/Users"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/:id/delete": {
+      "delete": {
+        "summary": "Delete registered User",
+        "description": "Endpoint to delete user",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "id": "number",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Users"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "id": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "Object",
+                  "items": {
+                    "$ref": "#/components/schemas/Users"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/create": {
+      "post": {
+        "summary": "Register a restaurant",
+        "description": "Endpoint to register a restaurant",
+        "tags": ["Restaurants"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "body",
+          "name": "string",
+          "address": "string",
+          "cnpj": "string",
+          "logo": "string",
+          "units": {
+            "manager": "[string]",
+            "address": "[string]"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Restaurants"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "id": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Restaurant already exists!"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "Object",
+                  "items": {
+                    "$ref": "#/components/schemas/Restaurants"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/get": {
+      "get": {
+        "summary": "Delete registered User",
+        "description": "Endpoint to delete user",
+        "tags": ["Restaurants"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "query",
+          "id": "number"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Restaurants"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "id": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "409": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "Object",
+                  "items": {
+                    "$ref": "#/components/schemas/Users"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/get/:id": {
+      "get": {
+        "summary": "Get registered Restaurant by Id",
+        "description": "Endpoint to get registered restaurant by id",
+        "tags": ["Restaurants"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "id": "id",
+          "name": "name",
+          "in": "query",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Restaurants"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "id": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "409": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "Object",
+                  "items": {
+                    "$ref": "#/components/schemas/Users"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/:id/update": {
+      "patch": {
+        "summary": "Update registered Restaurant",
+        "description": "Endpoint to update restaurant",
+        "tags": ["Restaurants"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "id": "number",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Restaurants"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "id": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "409": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "Object",
+                  "items": {
+                    "$ref": "#/components/schemas/Users"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/:id/delete": {
+      "delete": {
+        "summary": "Delete registered Restaraunt",
+        "description": "Endpoint to delete restaurant",
+        "tags": ["Restaurants"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "id": "number",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Restaurants"
+              },
+              "examples": {
+                "user": {
+                  "value": {
+                    "id": "1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "409": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "Object",
+                  "items": {
+                    "$ref": "#/components/schemas/Users"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
