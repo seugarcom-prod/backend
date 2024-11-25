@@ -17,12 +17,12 @@ export const createFoodController = async (
   const existingFood = await getFoodById(id);
   if (existingFood) return res.sendStatus(400);
 
-  const { name, restaurant, category, description, price } = req.body;
+  const { name, restaurant, category, description, price, image } = req.body;
 
   const sameName = await getFoodByName(name);
   if (sameName) return res.sendStatus(400);
 
-  if (!name || !restaurant || !category || !price || !description)
+  if (!name || !restaurant || !category || !price || !description || !image)
     return res.sendStatus(400);
 
   try {
@@ -32,6 +32,7 @@ export const createFoodController = async (
       name,
       price,
       description,
+      image
     });
 
     res.status(201).json(newFood).end();
@@ -40,10 +41,7 @@ export const createFoodController = async (
   }
 };
 
-export const getAllFoodsController = async (
-  req: express.Request,
-  res: express.Response
-) => {
+export const getAllFoodsController = async (res: express.Response) => {
   try {
     const foods = await getFoods();
 
@@ -79,7 +77,7 @@ export const updateFoodController = async (
 ) => {
   try {
     const { id } = req.params;
-    const { name, category, price, description, image } = req.body;
+    const { name, category, price, description, image, isAvailable } = req.body;
 
     const food = await getFoodById(id);
 
@@ -89,6 +87,7 @@ export const updateFoodController = async (
       food[0].price = price;
       food[0].description = description;
       food[0].image = image;
+      food[0].isAvailable = isAvailable;
 
       await updateFood(id, food);
     }

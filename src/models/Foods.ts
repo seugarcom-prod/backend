@@ -10,6 +10,7 @@ export interface IFoods extends Document {
   quantity: string;
   price: string;
   description: string;
+  isAvailable: boolean;
 }
 
 export const foods = new Schema({
@@ -28,6 +29,10 @@ export const foods = new Schema({
   },
   price: {
     type: Number,
+  },
+  isAvailable: {
+    type: Boolean,
+    default: true,
   },
   description: {
     type: String,

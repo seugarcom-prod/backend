@@ -1,55 +1,6 @@
 {
   "openapi": "3.0.0",
   "components": {
-    "schemas": {
-      "Auth": {
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          }
-        }
-      },
-      "Users": {
-        "properties": {
-          "firstName": { "type": "string" },
-          "lastName": { "type": "string" },
-          "email": { "type": "string" },
-          "phone": { "type": "string" },
-          "password": { "type": "string" }
-        }
-      },
-      "Restaurants": {
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "logo": {
-            "type": "string"
-          },
-          "cnpj": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "units": {
-            "type": "Array",
-            "manager": {
-              "type": "string"
-            },
-            "address": {
-              "type": "string"
-            }
-          }
-        }
-      }
-    },
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
@@ -60,7 +11,7 @@
   },
   "info": {
     "title": "Seu Garçom Docs",
-    "version": "0.0.1",
+    "version": "0.1.2",
     "description": "Seu Garçom Swagger Docs"
   },
   "servers": [
@@ -84,8 +35,15 @@
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Auth"
+              "schema": {       
+                  "properties": {
+                    "email": {
+                        "type": "string"
+                      },
+                    "password": {
+                        "type": "string"
+                      }
+                  }     
               },
               "examples": {
                 "user": {
@@ -213,7 +171,7 @@
           "409": {
             "description": "User already exists"
           },
-          "200": {
+          "201": {
             "description": "OK!",
             "content": {
               "application/json": {
@@ -513,10 +471,10 @@
         }
       }
     },
-    "/restaurants/get": {
+    "/restaurants/list": {
       "get": {
-        "summary": "Delete registered User",
-        "description": "Endpoint to delete user",
+        "summary": "List all registered restaurant",
+        "description": "Endpoint to list registered Restaurants",
         "tags": ["Restaurants"],
         "security": [{ "bearerAuth": [] }],
         "parameters": {
@@ -540,7 +498,7 @@
           }
         },
         "responses": {
-          "409": {
+          "401": {
             "description": "Unauthorized"
           },
           "500": {
@@ -591,7 +549,7 @@
           }
         },
         "responses": {
-          "409": {
+          "401": {
             "description": "Unauthorized"
           },
           "500": {
@@ -620,15 +578,36 @@
         "tags": ["Restaurants"],
         "security": [{ "bearerAuth": [] }],
         "parameters": {
-          "in": "path",
           "id": "number",
           "required": "true"
         },
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Restaurants"
+                            "properties": {
+                "name": {
+                  "type": "String"
+                },
+                "logo": {
+                  "type": "String"
+                },
+                "cnpj": {
+                  "type": "String"
+                },
+                "address": {
+                  "type": "String"
+                },
+                "rating": {
+                  "type": "Number"
+                },
+                "units": {
+                  "type": "Array",
+                  "$ref": "RestaurantUnit"
+                },
+                "attendants": {
+                  "type": "Array",
+                  "$ref": "User"
+                }
               },
               "examples": {
                 "user": {
@@ -641,8 +620,11 @@
           }
         },
         "responses": {
-          "409": {
+          "401": {
             "description": "Unauthorized"
+          },
+          "409": {
+            "description": "Invalid format"
           },
           "500": {
             "description": "Something went wrong"
@@ -651,12 +633,31 @@
             "description": "OK!",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "Object",
-                  "items": {
-                    "$ref": "#/components/schemas/Users"
-                  }
+              "properties": {
+                "name": {
+                  "type": "String"
+                },
+                "logo": {
+                  "type": "String"
+                },
+                "cnpj": {
+                  "type": "String"
+                },
+                "address": {
+                  "type": "String"
+                },
+                "rating": {
+                  "type": "Number"
+                },
+                "units": {
+                  "type": "Array",
+                  "$ref": "RestaurantUnit"
+                },
+                "attendants": {
+                  "type": "Array",
+                  "$ref": "User"
                 }
+               }
               }
             }
           }
@@ -671,6 +672,99 @@
         "security": [{ "bearerAuth": [] }],
         "parameters": {
           "in": "path",
+          "name": "id",
+          "required": "true",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "properties": {
+                "name": {
+                  "type": "String"
+                },
+                "logo": {
+                  "type": "String"
+                },
+                "cnpj": {
+                  "type": "String"
+                },
+                "address": {
+                  "type": "String"
+                },
+                "rating": {
+                  "type": "Number"
+                },
+                "units": {
+                  "type": "Array",
+                  "$ref": "RestaurantUnit"
+                },
+                "attendants": {
+                  "type": "Array",
+                  "$ref": "User"
+                }
+              },
+              "examples": {
+                "id": "1"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          },
+          "409": {
+            "description": "Restaurant does not exist"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "properties": {
+                  "name": {
+                    "type": "Novo nome"
+                  },
+                  "logo": {
+                    "type": "foto-de-pizza.jpg"
+                  },
+                  "cnpj": {
+                    "type": "000.0000.000/0000-1"
+                  },
+                  "address": {
+                    "type": "String"
+                  },
+                  "rating": {
+                    "type": "Number"
+                  },
+                  "units": {
+                    "type": "Array",
+                    "$ref": "RestaurantUnit"
+                  },
+                  "attendants": {
+                    "type": "Array",
+                    "$ref": "User"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/:id/products": {
+      "post": {
+        "summary": "Register a product/food on registered Restaraunt",
+        "description": "Endpoint to create product(food) restaurant",
+        "tags": ["Foods"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
           "id": "number",
           "required": "true"
         },
@@ -678,19 +772,512 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Restaurants"
+                 "properties": {
+                    "restaurant": {
+                      "id": "Number"
+                    },
+                    "image": {
+                      "type": "String"
+                    },
+                    "name": {
+                      "type": "String"
+                    },
+                    "quantity": {
+                      "type": "Number"
+                    },
+                    "price": {
+                      "type": "String"
+                    },
+                    "description": {
+                      "type": "String"
+                    }
+                 }
               },
               "examples": {
-                "user": {
-                  "value": {
-                    "id": "1"
-                  }
-                }
+                    "restaurant": {
+                      "id": 1
+                    },
+                    "image": {
+                      "type": "hamburguer-image.jpg"
+                    },
+                    "name": {
+                      "type": "Cheddar Chicken"
+                    },
+                    "quantity": {
+                      "type": 2
+                    },
+                    "price": {
+                      "type": "R$29,90"
+                    },
+                    "description": {
+                      "type": "Burger 140g de frango com bacon, cheddar cremoso, cebola roxa, pimenta do reino, no pão brioche."
+                    }
               }
             }
           }
         },
         "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "409": {
+            "description": "Product already registered"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "201": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "restaurant": {
+                        "id": "number"
+                    },
+                    "image": {
+                      "type": "String"
+                    },
+                    "name": {
+                      "type": "String"
+                    },
+                    "quantity": {
+                      "type": "Number"
+                    },
+                    "price": {
+                      "type": "Number"
+                    },
+                    "description": {
+                      "type": "String"
+                    }
+                 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+     "/restaurants/:id/products/": {
+      "get": {
+        "summary": "List all products/foods on registered Restaraunt",
+        "description": "Endpoint to list all products(foods) restaurant",
+        "tags": ["Foods"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "id": "number",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                 "properties": {
+                    "restaurant": {
+                      "type": "Number"
+                    },
+                    "image": {
+                      "type": "String"
+                    },
+                    "name": {
+                      "type": "String"
+                    },
+                    "quantity": {
+                      "type": "Number"
+                    },
+                    "price": {
+                      "type": "String"
+                    },
+                    "description": {
+                      "type": "String"
+                    }
+                 }
+              },
+              "examples": {
+                    "restaurant": {
+                      "id": 1
+                    },
+                    "image": {
+                      "type": "hamburguer-image.jpg"
+                    },
+                    "name": {
+                      "type": "Cheddar Chicken"
+                    },
+                    "quantity": {
+                      "type": 2
+                    },
+                    "price": {
+                      "type": "R$29,90"
+                    },
+                    "description": {
+                      "type": "Burger 140g de frango com bacon, cheddar cremoso, cebola roxa, pimenta do reino, no pão brioche."
+                    }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "201": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "restaurant": {
+                        "id": "number"
+                    },
+                    "image": {
+                      "type": "String"
+                    },
+                    "name": {
+                      "type": "String"
+                    },
+                    "quantity": {
+                      "type": "Number"
+                    },
+                    "price": {
+                      "type": "Number"
+                    },
+                    "description": {
+                      "type": "String"
+                    }
+                 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/:id/products/:id": {
+      "get": {
+        "summary": "Get a product/food on registered Restaraunt",
+        "description": "Endpoint to get product(food) restaurant",
+        "tags": ["Foods"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "restaurantId": "number",
+          "foodId": "number",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                 "properties": {
+                    "image": {
+                      "type": "String"
+                    },
+                    "name": {
+                      "type": "String"
+                    },
+                    "category": {
+                      "type": "String"
+                    },
+                    "quantity": {
+                      "type": "Number"
+                    },
+                    "price": {
+                      "type": "String"
+                    },
+                    "description": {
+                      "type": "String"
+                    },
+                    "isAvailable": {
+                      "type": "Boolean"
+                    }
+                 }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "409": {
+            "description": "Product does not exist"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "restaurant": {
+                        "id": "number"
+                    },
+                    "image": {
+                      "type": "String"
+                    },
+                    "name": {
+                      "type": "String"
+                    },
+                    "quantity": {
+                      "type": "Number"
+                    },
+                    "price": {
+                      "type": "Number"
+                    },
+                    "description": {
+                      "type": "String"
+                    }
+                 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/:id/products/:id/update": {
+      "patch": {
+        "summary": "Update a product/food on registered Restaraunt",
+        "description": "Endpoint to update product(food) restaurant",
+        "tags": ["Foods"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "restaurantId": "number",
+          "foodId": "number",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                 "properties": {
+                    "image": {
+                      "type": "String"
+                    },
+                    "name": {
+                      "type": "String"
+                    },
+                    "category": {
+                      "type": "String"
+                    },
+                    "quantity": {
+                      "type": "Number"
+                    },
+                    "price": {
+                      "type": "String"
+                    },
+                    "description": {
+                      "type": "String"
+                    },
+                    "isAvailable": {
+                      "type": "Boolean"
+                    }
+                 }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "409": {
+            "description": "Product does not exist"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "restaurant": {
+                        "id": "number"
+                    },
+                    "image": {
+                      "type": "String"
+                    },
+                    "name": {
+                      "type": "String"
+                    },
+                    "quantity": {
+                      "type": "Number"
+                    },
+                    "price": {
+                      "type": "Number"
+                    },
+                    "description": {
+                      "type": "String"
+                    }
+                 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/:id/products/:id/delete": {
+      "delete": {
+        "summary": "Delete a product/food on registered Restaraunt",
+        "description": "Endpoint to delete product(food) restaurant",
+        "tags": ["Foods"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "restaurantId": "number",
+          "foodId": "number",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                 "properties": {
+                    "image": {
+                      "type": "String"
+                    },
+                    "name": {
+                      "type": "String"
+                    },
+                    "category": {
+                      "type": "String"
+                    },
+                    "quantity": {
+                      "type": "Number"
+                    },
+                    "price": {
+                      "type": "String"
+                    },
+                    "description": {
+                      "type": "String"
+                    },
+                    "isAvailable": {
+                      "type": "Boolean"
+                    }
+                 }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "409": {
+            "description": "Product does not exist"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "restaurant": {
+                        "id": "number"
+                    },
+                    "image": {
+                      "type": "String"
+                    },
+                    "name": {
+                      "type": "String"
+                    },
+                    "quantity": {
+                      "type": "Number"
+                    },
+                    "price": {
+                      "type": "Number"
+                    },
+                    "description": {
+                      "type": "String"
+                    }
+                 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/:id/:restaurantId/request": {
+      "post": {
+        "summary": "Create request in a Restaraunt from a User/GuestLogin",
+        "description": "Endpoint to create a request",
+        "tags": ["Order"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "id": "number",
+          "restaurantId": "number",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                 "properties": {
+                    "restaurant": {
+                      "type": "String"
+                    },
+                    "customer": {
+                      "type": "String"
+                    },
+                    "items": {
+                      "type": "Array",
+                      "$ref": "Foods"
+                    },
+                    "status": {
+                      "type": "Array",
+                      "items": {
+                        "type": "String",
+                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                      }
+                    },
+                    "attendant": {
+                      "type": "String"
+                    },
+                    "table": {
+                      "type": "Number"
+                    },
+                    "discountTicket": {
+                      "type": "String"
+                    },
+                    "totalAmount": {
+                      "type": "Number"
+                    },
+                    "isPaid": {
+                      "type": "Boolean"
+                    },
+                    "paidAt": {
+                      "type": "Date"
+                    }
+                 }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
           "409": {
             "description": "Unauthorized"
           },
@@ -702,13 +1289,432 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "Object",
-                  "items": {
-                    "$ref": "#/components/schemas/Users"
-                  }
+                  "properties": {
+                    "restaurant": {
+                      "type": "String"
+                    },
+                    "customer": {
+                      "type": "String"
+                    },
+                    "items": {
+                      "type": "Array",
+                      "$ref": "Foods"
+                    },
+                    "status": {
+                      "type": "Array",
+                      "items": {
+                        "type": "String",
+                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                      }
+                    },
+                    "attendant": {
+                      "type": "String"
+                    },
+                    "table": {
+                      "type": "Number"
+                    },
+                    "discountTicket": {
+                      "type": "String"
+                    },
+                    "totalAmount": {
+                      "type": "Number"
+                    },
+                    "isPaid": {
+                      "type": "Boolean"
+                    },
+                    "paidAt": {
+                      "type": "Date"
+                    }
+                 }
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/user/:id/request/list": {
+      "get": {
+        "summary": "List all request from a User (exclusively)",
+        "description": "Endpoint to list requests from user",
+        "tags": ["Order"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "id": "string",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                 "properties": {
+                  "type": "Array",
+                  "schema": {
+                    "restaurant": {
+                      "type": "String"
+                    },
+                    "customer": {
+                      "type": "String"
+                    },
+                    "items": {
+                      "type": "Array",
+                      "$ref": "Foods"
+                    },
+                    "status": {
+                      "type": "Array",
+                      "items": {
+                        "type": "String",
+                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                      }
+                    },
+                    "attendant": {
+                      "type": "String"
+                    },
+                    "table": {
+                      "type": "Number"
+                    },
+                    "discountTicket": {
+                      "type": "String"
+                    },
+                    "totalAmount": {
+                      "type": "Number"
+                    },
+                    "isPaid": {
+                      "type": "Boolean"
+                    },
+                    "paidAt": {
+                      "type": "Date"
+                    }
+                 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "restaurant": {
+                      "type": "String"
+                    },
+                    "customer": {
+                      "type": "String"
+                    },
+                    "items": {
+                      "type": "Array",
+                      "$ref": "Foods"
+                    },
+                    "status": {
+                      "type": "Array",
+                      "items": {
+                        "type": "String",
+                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                      }
+                    },
+                    "attendant": {
+                      "type": "String"
+                    },
+                    "table": {
+                      "type": "Number"
+                    },
+                    "discountTicket": {
+                      "type": "String"
+                    },
+                    "totalAmount": {
+                      "type": "Number"
+                    },
+                    "isPaid": {
+                      "type": "Boolean"
+                    },
+                    "paidAt": {
+                      "type": "Date"
+                    }
+                 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/:id/request/:id": {
+      "get": {
+        "summary": "List/detail specific request from a User (exclusively)",
+        "description": "Endpoint to request detail from user",
+        "tags": ["Order"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "id": "string",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                 "properties": {
+                  "type": "Array",
+                  "schema": {
+                    "restaurant": {
+                      "type": "String"
+                    },
+                    "customer": {
+                      "type": "String"
+                    },
+                    "items": {
+                      "type": "Array",
+                      "$ref": "Foods"
+                    },
+                    "status": {
+                      "type": "Array",
+                      "items": {
+                        "type": "String",
+                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                      }
+                    },
+                    "attendant": {
+                      "type": "String"
+                    },
+                    "table": {
+                      "type": "Number"
+                    },
+                    "discountTicket": {
+                      "type": "String"
+                    },
+                    "totalAmount": {
+                      "type": "Number"
+                    },
+                    "isPaid": {
+                      "type": "Boolean"
+                    },
+                    "paidAt": {
+                      "type": "Date"
+                    }
+                 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "409": {
+            "description": "Does not exist"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "restaurant": {
+                      "type": "String"
+                    },
+                    "customer": {
+                      "type": "String"
+                    },
+                    "items": {
+                      "type": "Array",
+                      "$ref": "Foods"
+                    },
+                    "status": {
+                      "type": "Array",
+                      "items": {
+                        "type": "String",
+                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                      }
+                    },
+                    "attendant": {
+                      "type": "String"
+                    },
+                    "table": {
+                      "type": "Number"
+                    },
+                    "discountTicket": {
+                      "type": "String"
+                    },
+                    "totalAmount": {
+                      "type": "Number"
+                    },
+                    "isPaid": {
+                      "type": "Boolean"
+                    },
+                    "paidAt": {
+                      "type": "Date"
+                    }
+                 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/:id/request/:id/update": {
+      "patch": {
+        "summary": "Update request from a User (exclusively)",
+        "description": "Endpoint to update a request from user",
+        "tags": ["Order"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "id": "string",
+          "requestId": "string",
+          "required": "true"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                 "properties": {
+                  "type": "Array",
+                  "schema": {
+                    "restaurant": {
+                      "type": "String"
+                    },
+                    "customer": {
+                      "type": "String"
+                    },
+                    "items": {
+                      "type": "Array",
+                      "$ref": "Foods"
+                    },
+                    "status": {
+                      "type": "Array",
+                      "items": {
+                        "type": "String",
+                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                      }
+                    },
+                    "attendant": {
+                      "type": "String"
+                    },
+                    "table": {
+                      "type": "Number"
+                    },
+                    "discountTicket": {
+                      "type": "String"
+                    },
+                    "totalAmount": {
+                      "type": "Number"
+                    },
+                    "isPaid": {
+                      "type": "Boolean"
+                    },
+                    "paidAt": {
+                      "type": "Date"
+                    }
+                 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "409": {
+            "description": "Request not found"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "restaurant": {
+                      "type": "String"
+                    },
+                    "customer": {
+                      "type": "String"
+                    },
+                    "items": {
+                      "type": "Array",
+                      "$ref": "Foods"
+                    },
+                    "status": {
+                      "type": "Array",
+                      "items": {
+                        "type": "String",
+                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                      }
+                    },
+                    "attendant": {
+                      "type": "String"
+                    },
+                    "table": {
+                      "type": "Number"
+                    },
+                    "discountTicket": {
+                      "type": "String"
+                    },
+                    "totalAmount": {
+                      "type": "Number"
+                    },
+                    "isPaid": {
+                      "type": "Boolean"
+                    },
+                    "paidAt": {
+                      "type": "Date"
+                    }
+                 }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/:id/request/:id/delete": {
+      "delete": {
+        "summary": "Update request from a User (exclusively)",  
+        "description": "Endpoint to update a request from user",
+        "tags": ["Order"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": {
+          "in": "path",
+          "id": "string",
+          "requestId": "string",
+          "required": "true"
+        },
+        "responses": {
+          "400": {
+            "description": "Bad request"
+          },
+          "409": {
+            "description": "Request not found"
+          },
+          "500": {
+            "description": "Something went wrong"
+          },
+          "200": {
+            "description": "OK!"
           }
         }
       }

@@ -10,29 +10,29 @@ import { isAdmin, isAuthenticated } from "../middlewares/index.js";
 
 export default (foodsRouter: express.Router) => {
   foodsRouter.post(
-    "/restaurant/products/create",
+    "/restaurant/:id/products",
     isAuthenticated,
     isAdmin,
     createFoodController
   );
   foodsRouter.get(
-    "/restaurant/products/list",
+    "/restaurant/:id/products",
     isAuthenticated,
     getAllFoodsController
   );
   foodsRouter.get(
-    "/restaurant/products/:id",
+    "/restaurant/:id/products/:id",
     isAuthenticated,
     getFoodByIdController
   );
   foodsRouter.patch(
-    "/restaurant/products/update",
+    "/restaurant/:id/products/:id/update",
     isAdmin,
     isAuthenticated,
     updateFoodController
   );
   foodsRouter.delete(
-    "/restaurant/products/delete",
+    "/restaurant/:id/products/:id/delete",
     isAdmin,
     isAuthenticated,
     deleteFoodController

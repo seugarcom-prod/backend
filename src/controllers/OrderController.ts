@@ -18,17 +18,18 @@ export const createOrderController = async (
     return res.status(400).json({ status: "error", errors: errors.array() });
   }
 
-  const { id } = req.params;
+  const { id, restaurantId } = req.params;
   const userId = id;
+  const restId = restaurantId
 
   try {
     const { customerName, items, attendant, table, totalAmount, discountTicket, isPaid } = req.body;
     const newRequest = await createOrder(
       { customerName, items, attendant, table, totalAmount, discountTicket, isPaid },
-      userId
+      userId, restaurantId
     );
 
-    res.status(201).json({ msg: `Order created: ${newRequest}` });
+    res.status(201).json({ msg: `Order created by ${customerName}: ${newRequest}` });
   } catch (error) {
     console.log("Error", error);
   }
@@ -39,7 +40,7 @@ export const updateOrderController = async (
   res: express.Response
 ) => {
   try {
-    const { id } = req.params;
+    const { id, requestId } = req.params;
     const { items, totalAmount, isPaid } = req.body;
 
     const userRequest = await getOrderById(id);
@@ -52,6 +53,7 @@ export const updateOrderController = async (
       // Caso o pedido seja finalizado/pago
       userRequest.isPaid = true;
       userRequest.paidAt = new Date();
+      userRequest.save();
     } else if (items) {
       // Caso o pedido tenha itens atualizados
       userRequest.items = [...userRequest.items, ...items]; // Adicionar itens ao pedido existente
@@ -59,7 +61,7 @@ export const updateOrderController = async (
     }
 
   // Atualizar o pedido no banco
-    await updateOrder(id, userRequest);
+    await updateOrder(id, requestId, userRequest);
 
     return res.status(200).json(userRequest);
   } catch (error) {

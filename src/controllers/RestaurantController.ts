@@ -86,7 +86,7 @@ export const updateRestaurantController = async (
       restaurant.address = address;
       restaurant.cnpj = cnpj;
       restaurant.logo = logo;
-      restaurant.units = [units];
+      restaurant.units[0] = [units];
 
       await updateRestaurant(id, restaurant);
     }

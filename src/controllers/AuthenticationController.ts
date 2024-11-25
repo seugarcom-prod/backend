@@ -1,6 +1,7 @@
 import express from "express";
 import { createUser, getUserByEmail } from "../models/User.ts";
 import { random, authentication } from "../helpers";
+import { cpf } from 'cpf-cnpj-validator';
 
 export const login = async (req: express.Request, res: express.Response) => {
   try {
@@ -40,6 +41,25 @@ export const login = async (req: express.Request, res: express.Response) => {
   }
 };
 
+export const GuestLogin = async(req: express.Request, res: express.Response) => {
+    try {
+    const { document, password } = req.body;
+
+    if (!document || !password) return res.sendStatus(400);
+
+    const validDocument = cpf.isValid(document);
+
+    if (!validDocument) {
+      return res.sendStatus(400);
+    }
+
+    return res.status(200).json().end();
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(400);
+  }
+}
+
 export const register = async (req: express.Request, res: express.Response) => {
   try {
     const { email, firstName, lastName, phone, password } = req.body;
@@ -51,6 +71,8 @@ export const register = async (req: express.Request, res: express.Response) => {
 
     const salt = random();
     const user = await createUser({
+      firstName,
+      lastName,
       email,
       phone,
       authentication: {

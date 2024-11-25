@@ -11,17 +11,12 @@ import { isAuthenticated } from "../middlewares/index.ts";
 
 export default (orderRouter: express.Router) => {
   orderRouter.post(
-    "/user/:id/request",
+    "/user/:id/:restaurantId/request",
     // isAuthenticated,
     createOrderController
   );
-  orderRouter.patch(
-    "/user/:id/request/:id/update",
-    // isAuthenticated,
-    updateOrderController
-  );
   orderRouter.get(
-    "/user/:id/requests/list",
+    "/user/:id/request/list",
     // isAuthenticated,
     getAllOrdersController
   );
@@ -30,13 +25,18 @@ export default (orderRouter: express.Router) => {
     // isAuthenticated,
     getOrderByIdController
   );
+  orderRouter.patch(
+    "/user/:id/request/:id/update",
+    // isAuthenticated,
+    updateOrderController
+  );
   orderRouter.get(
     "/user/:id/requests",
     // isAuthenticated,
     getOrderByClientNameController
   );
   orderRouter.delete(
-    "/user/:id/request/delete",
+    "/user/:id/request/:id/delete",
     // isAuthenticated,
     deleteOrderController
   );

@@ -15,7 +15,7 @@ export interface IOrder extends Document {
 
 const orderSchema = new Schema(
   {
-    restaurant: {
+    restaurantId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Restaurant",
     },
@@ -39,6 +39,7 @@ const orderSchema = new Schema(
     },
     table: {
       type: Number,
+      ref: "RestaurantUnit"
     },
     discountTicket: {
       type: String,
@@ -72,14 +73,14 @@ export const getOrderByClientName = (name: string) =>
   OrderModel.findOne({ name });
 
 // Create Request
-export const createOrder = (values: Record<string, any>, userId: string) =>
-  new OrderModel(values, userId).save().then((request) => request.toObject());
+export const createOrder = (values: Record<string, any>, userId: string, restaurantId: string) =>
+  new OrderModel(values, {_id: userId}, {restaurantId: restaurantId}).save().then((request) => request.toObject());
 
 // Delete Request
 export const deleteOrder = (id: string) =>
   OrderModel.findOneAndDelete({ _id: id });
 
 // Update Request
-export const updateOrder = (id: string, values: Record<string, any>) =>{
-  OrderModel.findByIdAndUpdate(id, values);
+export const updateOrder = (id: string, requestId: string, values: Record<string, any>) =>{
+  OrderModel.findByIdAndUpdate({_id: id}, {requestId: requestId}, values);
 }
