@@ -3,32 +3,49 @@ import { IUser } from "./index";
 const Schema = mongoose.Schema;
 
 export interface IRestaurantUnit extends Document {
-  address: string;
+  address: {
+    zipCode: string;
+    street: string;
+    number: number;
+    complement: string
+  };
   cnpj: string;
+  socialName: string;
   manager: string;
-  contact: string;
-  tables: Array<Number>;
-  attendants: typeof mongoose.Schema.Types.ObjectId | IUser ;
+  phone: string;
+  attendants: typeof mongoose.Schema.Types.ObjectId | IUser;
 };
 
 const restaurantUnitSchema = new Schema({
   address: {
-    type: String,
+    zipCode: {
+      type: String,
+      required: true,
+    },
+    street: {
+      type: String,
+      required: true
+    },
+    number: {
+      type: Number,
+      required: true
+    },
+    complement: {
+      type: String,
+    }
   },
   cnpj: {
     type: String,
   },
+  socialName: {
+    type: String
+  },
   manager: {
     type: String,
   },
-  contact: {
+  phone: {
     type: String,
   },
-  tables: [
-    {
-      type: Number,
-    },
-  ],
   attendants: [
     {
       type: mongoose.Schema.Types.ObjectId,

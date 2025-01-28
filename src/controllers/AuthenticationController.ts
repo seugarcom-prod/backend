@@ -43,9 +43,9 @@ export const login = async (req: express.Request, res: express.Response) => {
 
 export const GuestLogin = async(req: express.Request, res: express.Response) => {
     try {
-    const { document, password } = req.body;
+    const { document, email } = req.body;
 
-    if (!document || !password) return res.sendStatus(400);
+    if (!document || !email) return res.sendStatus(400);
 
     const validDocument = cpf.isValid(document);
 

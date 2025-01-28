@@ -9,9 +9,165 @@
       }
     }
   },
+  "schemas": {
+    "Restaurant": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "string"
+          },
+          "cnpj": {
+            "type": "string"
+          },
+          "socialName": {
+            "type": "string"
+          },
+          "address": {
+            "type": "object",
+            "properties": {
+              "zipCode": {
+                "type": "string"
+              },
+              "street": {
+                "type": "string"
+              },
+              "number": {
+                "type": "number"
+              },
+              "complement": {
+                "type": "string"
+              }
+            }
+          },
+          "rating": {
+            "type": "number"
+          },
+          "specialty": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "admin": {
+            "type": "object",
+            "properties": {
+              "fullName": {
+                "type": "string"
+              },
+              "cpf": {
+                "type": "string"
+              }
+            }
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "$ref": "#/src/models/RestaurantUnit"
+            }
+          },
+          "attendants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/src/models/User"
+            }
+          }
+        }
+      }
+    },
+    "RestaurantUnit": {
+      "type": "object",
+      "properties": {
+        "cnpj": {
+          "type": "string"
+        },
+        "address": {
+          "type": "object",
+          "properties": {
+            "zipCode": {
+              "type": "string"
+            },
+            "street": {
+              "type": "string"
+            },
+            "number": {
+              "type": "number"
+            },
+            "complement": {
+              "type": "string"
+            }
+          }
+        },
+        "contact": {
+          "type": "string"
+        },
+        "attendants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/src/models/User"
+          }
+        }
+      }
+    },
+    "User": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "CPF": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "ADMIN",
+            "MANAGER",
+            "ATTENDANT",
+            "CLIENT"
+          ]
+        }
+      }
+    },
+    "Foods": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "number"
+        },
+        "price": {
+          "type": "number"
+        },
+        "isAvailable": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    }
+  },
   "info": {
     "title": "Seu Garçom Docs",
-    "version": "0.1.2",
+    "version": "0.2.1",
     "description": "Seu Garçom Swagger Docs"
   },
   "servers": [
@@ -21,35 +177,33 @@
     }
   ],
   "paths": {
-    "/login": {
+    "/auth/": {
       "post": {
         "summary": "User login",
         "description": "Endpoint for login",
-        "tags": ["Auth"],
-        "security": [{ "bearerAuth": [] }],
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": {
           "in": "body",
-          "email": "string",
-          "password": "string"
+          "required": true
         },
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
-              "schema": {       
-                  "properties": {
-                    "email": {
-                        "type": "string"
-                      },
-                    "password": {
-                        "type": "string"
-                      }
-                  }     
-              },
-              "examples": {
-                "user": {
-                  "value": {
-                    "email": "jubinilson_godinilson@gmail.com",
-                    "password": "senha123"
+              "schema": {
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
                   }
                 }
               }
@@ -57,20 +211,30 @@
           }
         },
         "responses": {
-          "401": {
+          "403": {
+            "description": "Invalid format"
+          },
+          "404": {
             "description": "Unauthorized"
           },
           "400": {
-            "description": "User already exists"
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
           },
           "200": {
             "description": "Logged in!",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "Object",
-                  "items": {
-                    "$ref": "#/components/schemas/Auth"
+                  "properties": {
+                    "email": {
+                      "type": "String"
+                    },
+                    "password": {
+                      "type": "String"
+                    }
                   }
                 }
               }
@@ -79,25 +243,173 @@
         }
       }
     },
-    "/register": {
+    "/auth/guest/": {
       "post": {
-        "summary": "User register",
-        "description": "Endpoint for register",
-        "tags": ["Auth"],
-        "security": [{ "bearerAuth": [] }],
+        "summary": "Guest login",
+        "description": "Endpoint for guest who don't wish to register on system",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": {
           "in": "body",
-          "firstName": "string",
-          "lastName": "string",
-          "email": "string",
-          "phone": "string",
-          "password": "string"
+          "required": true
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "cpf": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "403": {
+            "description": "Invalid format"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "200": {
+            "description": "Logged in!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "cpf": {
+                      "type": "String"
+                    },
+                    "email": {
+                      "type": "String"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout/": {
+      "patch": {
+        "summary": "User logout",
+        "description": "Endpoint for user logout",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": {
+          "in": "body",
+          "required": true
         },
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Auth"
+                "properties": {
+                  "accessToken": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "403": {
+            "description": "Invalid format"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "200": {
+            "description": "Logged in!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "email": {
+                      "type": "String"
+                    },
+                    "password": {
+                      "type": "String"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/": {
+      "post": {
+        "summary": "User register for admin",
+        "description": "Endpoint for register",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": {
+          "in": "body",
+          "required": true
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "CPF": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "Enum",
+                    "value": [
+                      "ADMIN",
+                      "MANAGER",
+                      "ATTENDANT"
+                    ]
+                  }
+                }
               },
               "examples": {
                 "user": {
@@ -106,6 +418,8 @@
                     "lastName": "Cicrano",
                     "email": "jubinilson_godinilson@gmail.com",
                     "phone": "+5583999998888",
+                    "CPF": "999.999.999-99",
+                    "role": "ATTENDANT",
                     "password": "senha123"
                   }
                 }
@@ -117,68 +431,37 @@
           "409": {
             "description": "User already exists"
           },
-          "200": {
-            "description": "OK!",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "Object",
-                  "items": {
-                    "$ref": "#/components/schemas/Users"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user/create": {
-      "post": {
-        "summary": "User register for admin",
-        "description": "Endpoint for register",
-        "tags": ["Users"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "in": "body",
-          "firstName": "string",
-          "lastName": "string",
-          "email": "string",
-          "phone": "string",
-          "password": "string"
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Users"
-              },
-              "examples": {
-                "user": {
-                  "value": {
-                    "firstName": "Fulano",
-                    "lastName": "Cicrano",
-                    "email": "jubinilson_godinilson@gmail.com",
-                    "phone": "+5583999998888",
-                    "password": "senha123"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "409": {
-            "description": "User already exists"
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Invalid format"
           },
           "201": {
             "description": "OK!",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "Object",
-                  "items": {
-                    "$ref": "#/components/schemas/Users"
+                  "properties": {
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "CPF": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "Enum",
+                      "value": "CLIENT"
+                    }
                   }
                 }
               }
@@ -187,27 +470,64 @@
         }
       }
     },
-    "/user/get": {
+    "/user/list/": {
       "get": {
         "summary": "Get all registered Users",
         "description": "Endpoint for list users",
-        "tags": ["Users"],
-        "security": [{ "bearerAuth": [] }],
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": {
+          "in": "body",
+          "required": true
+        },
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Users"
-              },
-              "examples": {
-                "user": {
-                  "value": {
-                    "firstName": "Fulano",
-                    "lastName": "Cicrano",
-                    "email": "jubinilson_godinilson@gmail.com",
-                    "phone": "+5583999998888",
-                    "password": "senha123"
+                "properties": {
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "CPF": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "Enum",
+                    "value": [
+                      "ADMIN",
+                      "MANAGER",
+                      "ATTENDANT",
+                      "CLIENT"
+                    ]
                   }
+                }
+              }
+            },
+            "examples": {
+              "user": {
+                "value": {
+                  "firstName": "Fulano",
+                  "lastName": "Cicrano",
+                  "email": "jubinilson_godinilson@gmail.com",
+                  "phone": "+5583999998888",
+                  "CPF": "999.999.999-99",
+                  "role": "CLIENT",
+                  "password": "senha123"
                 }
               }
             }
@@ -228,9 +548,31 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "Object",
-                  "items": {
-                    "$ref": "#/components/schemas/Users"
+                  "properties": {
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "authentication": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "Enum",
+                      "value": [
+                        "ADMIN",
+                        "MANAGER",
+                        "ATTENDANT",
+                        "CLIENT"
+                      ]
+                    }
                   }
                 }
               }
@@ -243,37 +585,30 @@
       "get": {
         "summary": "Get registered User by Id",
         "description": "Endpoint to get user by id",
-        "tags": ["Users"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [
+        "tags": [
+          "Users"
+        ],
+        "security": [
           {
-            "id": "id",
-            "name": "name",
-            "in": "query",
-            "description": "User name for search",
-            "required": "true"
+            "bearerAuth": []
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Users"
-              },
-              "examples": {
-                "user": {
-                  "value": {
-                    "firstName": "Fulano",
-                    "lastName": "Cicrano",
-                    "email": "jubinilson_godinilson@gmail.com",
-                    "phone": "+5583999998888",
-                    "password": "senha123"
-                  }
-                }
-              }
-            }
+        "parameters": [
+          {
+            "name": "CPF",
+            "type": "string",
+            "in": "query",
+            "description": "User CPF for search",
+            "required": false
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "in": "query",
+            "description": "User name for search",
+            "required": false
           }
-        },
+        ],
         "responses": {
           "400": {
             "description": "Bad request"
@@ -292,8 +627,31 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Users"
+                  "properties": {
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "CPF": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "Enum",
+                      "value": [
+                        "ADMIN",
+                        "MANAGER",
+                        "ATTENDANT",
+                        "CLIENT"
+                      ]
+                    }
                   }
                 }
               }
@@ -302,32 +660,66 @@
         }
       }
     },
-    "/user/:id/update": {
+    "/user/:id/update/": {
       "patch": {
         "summary": "Update registered User",
         "description": "Endpoint to update user",
-        "tags": ["Users"],
-        "security": [{ "bearerAuth": [] }],
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": {
+          "name": "id",
+          "type": "string",
           "in": "path",
-          "id": "number",
-          "required": "true"
+          "required": true
         },
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Users"
-              },
-              "examples": {
-                "user": {
-                  "value": {
-                    "firstName": "Cicrano",
-                    "lastName": "Cicaranos",
-                    "email": "jubinilson_@gmail.com",
-                    "phone": "+5583999998888",
-                    "password": "senha123"
+                "properties": {
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "CPF": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "Enum",
+                    "value": [
+                      "ADMIN",
+                      "MANAGER",
+                      "ATTENDANT",
+                      "CLIENT"
+                    ]
                   }
+                }
+              }
+            },
+            "examples": {
+              "user": {
+                "value": {
+                  "firstName": "Cicrano",
+                  "lastName": "Cicaranos",
+                  "email": "jubinilson_thesicanilson@gmail.com",
+                  "phone": "+5583999998888",
+                  "CPF": "999.999.999-99",
+                  "role": "MANAGER",
+                  "password": "senha123"
                 }
               }
             }
@@ -338,7 +730,7 @@
             "description": "Unauthorized"
           },
           "403": {
-            "description": "Forbidden"
+            "description": "Invalid format"
           },
           "500": {
             "description": "Something went wrong"
@@ -348,9 +740,31 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "Object",
-                  "items": {
-                    "$ref": "#/components/schemas/Users"
+                  "properties": {
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "CPF": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "Enum",
+                      "value": [
+                        "ADMIN",
+                        "MANAGER",
+                        "ATTENDANT",
+                        "CLIENT"
+                      ]
+                    }
                   }
                 }
               }
@@ -359,28 +773,51 @@
         }
       }
     },
-    "/user/:id/delete": {
+    "/user/:id/delete/": {
       "delete": {
         "summary": "Delete registered User",
         "description": "Endpoint to delete user",
-        "tags": ["Users"],
-        "security": [{ "bearerAuth": [] }],
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": {
+          "name": "id",
+          "type": "string",
           "in": "path",
-          "id": "number",
-          "required": "true"
+          "required": true
         },
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Users"
-              },
-              "examples": {
-                "user": {
-                  "value": {
-                    "id": "1"
-                  }
+                "firstName": {
+                  "type": "string"
+                },
+                "lastName": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "authentication": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "Enum",
+                  "value": [
+                    "ADMIN",
+                    "MANAGER",
+                    "ATTENDANT",
+                    "CLIENT"
+                  ]
                 }
               }
             }
@@ -391,7 +828,7 @@
             "description": "Unauthorized"
           },
           "403": {
-            "description": "Forbidden"
+            "description": "Invalid format"
           },
           "500": {
             "description": "Something went wrong"
@@ -401,9 +838,31 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "Object",
-                  "items": {
-                    "$ref": "#/components/schemas/Users"
+                  "properties": {
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "authentication": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "Enum",
+                      "value": [
+                        "ADMIN",
+                        "MANAGER",
+                        "ATTENDANT",
+                        "CLIENT"
+                      ]
+                    }
                   }
                 }
               }
@@ -412,33 +871,85 @@
         }
       }
     },
-    "/restaurants/create": {
+    "/restaurant/": {
       "post": {
         "summary": "Register a restaurant",
         "description": "Endpoint to register a restaurant",
-        "tags": ["Restaurants"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "in": "body",
-          "name": "string",
-          "address": "string",
-          "cnpj": "string",
-          "logo": "string",
-          "units": {
-            "manager": "[string]",
-            "address": "[string]"
+        "tags": [
+          "Restaurants"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
           }
-        },
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Restaurants"
-              },
-              "examples": {
-                "user": {
-                  "value": {
-                    "id": "1"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "logo": {
+                    "type": "string"
+                  },
+                  "cnpj": {
+                    "type": "string"
+                  },
+                  "socialName": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "object",
+                    "properties": {
+                      "zipCode": {
+                        "type": "string"
+                      },
+                      "street": {
+                        "type": "string"
+                      },
+                      "number": {
+                        "type": "number"
+                      },
+                      "complement": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "rating": {
+                    "type": "number"
+                  },
+                  "specialty": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "admin": {
+                    "type": "object",
+                    "properties": {
+                      "fullName": {
+                        "type": "string"
+                      },
+                      "cpf": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "units": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/src/models/RestaurantUnit"
+                    }
+                  },
+                  "attendants": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/src/models/User"
+                    }
                   }
                 }
               }
@@ -446,6 +957,79 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "logo": {
+                      "type": "string"
+                    },
+                    "cnpj": {
+                      "type": "string"
+                    },
+                    "socialName": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "zipCode": {
+                          "type": "string"
+                        },
+                        "street": {
+                          "type": "string"
+                        },
+                        "number": {
+                          "type": "number"
+                        },
+                        "complement": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "rating": {
+                      "type": "number"
+                    },
+                    "specialty": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "admin": {
+                      "type": "object",
+                      "properties": {
+                        "fullName": {
+                          "type": "string"
+                        },
+                        "cpf": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "units": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/src/models/RestaurantUnit"
+                      }
+                    },
+                    "attendants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/src/models/User"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
           "400": {
             "description": "Restaurant already exists!"
           },
@@ -454,43 +1038,65 @@
           },
           "500": {
             "description": "Something went wrong"
-          },
-          "200": {
-            "description": "OK!",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "Object",
-                  "items": {
-                    "$ref": "#/components/schemas/Restaurants"
-                  }
-                }
-              }
-            }
           }
         }
       }
     },
-    "/restaurants/list": {
+    "/restaurant/list/": {
       "get": {
         "summary": "List all registered restaurant",
         "description": "Endpoint to list registered Restaurants",
-        "tags": ["Restaurants"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "in": "query",
-          "id": "number"
-        },
+        "tags": [
+          "Restaurants"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Restaurants"
-              },
-              "examples": {
-                "user": {
-                  "value": {
-                    "id": "1"
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "logo": {
+                    "type": "string"
+                  },
+                  "cnpj": {
+                    "type": "string"
+                  },
+                  "socialName": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "zipCode": "string",
+                    "street": "string",
+                    "number": "number",
+                    "complement": "string"
+                  },
+                  "rating": {
+                    "type": "number"
+                  },
+                  "specialty": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "admin": {
+                    "fullName": "string",
+                    "cpf": "string"
+                  },
+                  "units": {
+                    "type": "array",
+                    "$ref": "RestaurantUnit"
+                  },
+                  "attendants": {
+                    "type": "array",
+                    "$ref": "User"
                   }
                 }
               }
@@ -509,9 +1115,30 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "Object",
-                  "items": {
-                    "$ref": "#/components/schemas/Users"
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "logo": {
+                      "type": "string"
+                    },
+                    "cnpj": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "string"
+                    },
+                    "rating": {
+                      "type": "number"
+                    },
+                    "units": {
+                      "type": "array",
+                      "$ref": "RestaurantUnit"
+                    },
+                    "attendants": {
+                      "type": "array",
+                      "$ref": "User"
+                    }
                   }
                 }
               }
@@ -520,37 +1147,30 @@
         }
       }
     },
-    "/restaurants/get/:id": {
+    "/restaurant/get/:id/": {
       "get": {
         "summary": "Get registered Restaurant by Id",
         "description": "Endpoint to get registered restaurant by id",
-        "tags": ["Restaurants"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "id": "id",
-          "name": "name",
-          "in": "query",
-          "required": "true"
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Restaurants"
-              },
-              "examples": {
-                "user": {
-                  "value": {
-                    "id": "1"
-                  }
-                }
-              }
-            }
+        "tags": [
+          "Restaurants"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
           }
+        ],
+        "parameters": {
+          "name": "name",
+          "type": "string",
+          "in": "query",
+          "required": true
         },
         "responses": {
           "401": {
             "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
           },
           "500": {
             "description": "Something went wrong"
@@ -560,9 +1180,46 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "Object",
-                  "items": {
-                    "$ref": "#/components/schemas/Users"
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "logo": {
+                      "type": "string"
+                    },
+                    "cnpj": {
+                      "type": "string"
+                    },
+                    "socialName": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "zipCode": "string",
+                      "street": "string",
+                      "number": "number",
+                      "complement": "string"
+                    },
+                    "rating": {
+                      "type": "number"
+                    },
+                    "specialty": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "admin": {
+                      "fullName": "string",
+                      "cpf": "string"
+                    },
+                    "units": {
+                      "type": "array",
+                      "$ref": "RestaurantUnit"
+                    },
+                    "attendants": {
+                      "type": "array",
+                      "$ref": "User"
+                    }
                   }
                 }
               }
@@ -571,49 +1228,66 @@
         }
       }
     },
-    "/restaurants/:id/update": {
+    "/restaurant/:id/update/": {
       "patch": {
         "summary": "Update registered Restaurant",
         "description": "Endpoint to update restaurant",
-        "tags": ["Restaurants"],
-        "security": [{ "bearerAuth": [] }],
+        "tags": [
+          "Restaurants"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": {
-          "id": "number",
-          "required": "true"
+          "name": "id",
+          "type": "string",
+          "in": "path",
+          "required": true
         },
         "requestBody": {
           "content": {
             "application/json": {
-                            "properties": {
+              "properties": {
                 "name": {
-                  "type": "String"
+                  "type": "string"
                 },
                 "logo": {
-                  "type": "String"
+                  "type": "string"
                 },
                 "cnpj": {
-                  "type": "String"
+                  "type": "string"
+                },
+                "socialName": {
+                  "type": "string"
                 },
                 "address": {
-                  "type": "String"
+                  "zipCode": "string",
+                  "street": "string",
+                  "number": "number",
+                  "complement": "string"
                 },
                 "rating": {
-                  "type": "Number"
+                  "type": "number"
+                },
+                "specialty": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "admin": {
+                  "fullName": "string",
+                  "cpf": "string"
                 },
                 "units": {
-                  "type": "Array",
+                  "type": "array",
                   "$ref": "RestaurantUnit"
                 },
                 "attendants": {
-                  "type": "Array",
+                  "type": "array",
                   "$ref": "User"
-                }
-              },
-              "examples": {
-                "user": {
-                  "value": {
-                    "id": "1"
-                  }
                 }
               }
             }
@@ -633,91 +1307,64 @@
             "description": "OK!",
             "content": {
               "application/json": {
-              "properties": {
-                "name": {
-                  "type": "String"
-                },
-                "logo": {
-                  "type": "String"
-                },
-                "cnpj": {
-                  "type": "String"
-                },
-                "address": {
-                  "type": "String"
-                },
-                "rating": {
-                  "type": "Number"
-                },
-                "units": {
-                  "type": "Array",
-                  "$ref": "RestaurantUnit"
-                },
-                "attendants": {
-                  "type": "Array",
-                  "$ref": "User"
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "logo": {
+                    "type": "string"
+                  },
+                  "cnpj": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "zipCode": "string",
+                    "street": "string",
+                    "number": "number",
+                    "complement": "string"
+                  },
+                  "rating": {
+                    "type": "number"
+                  },
+                  "units": {
+                    "type": "array",
+                    "$ref": "RestaurantUnit"
+                  },
+                  "attendants": {
+                    "type": "array",
+                    "$ref": "User"
+                  }
                 }
-               }
               }
             }
           }
         }
       }
     },
-    "/restaurants/:id/delete": {
+    "/restaurant/:id/delete/": {
       "delete": {
         "summary": "Delete registered Restaraunt",
         "description": "Endpoint to delete restaurant",
-        "tags": ["Restaurants"],
-        "security": [{ "bearerAuth": [] }],
+        "tags": [
+          "Restaurants"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": {
-          "in": "path",
           "name": "id",
-          "required": "true",
-          "schema": {
-            "type": "string"
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "properties": {
-                "name": {
-                  "type": "String"
-                },
-                "logo": {
-                  "type": "String"
-                },
-                "cnpj": {
-                  "type": "String"
-                },
-                "address": {
-                  "type": "String"
-                },
-                "rating": {
-                  "type": "Number"
-                },
-                "units": {
-                  "type": "Array",
-                  "$ref": "RestaurantUnit"
-                },
-                "attendants": {
-                  "type": "Array",
-                  "$ref": "User"
-                }
-              },
-              "examples": {
-                "id": "1"
-              }
-            }
-          }
+          "type": "string",
+          "in": "path",
+          "required": true
         },
         "responses": {
           "401": {
             "description": "Unauthorized"
           },
-          "409": {
-            "description": "Restaurant does not exist"
+          "404": {
+            "description": "Not found"
           },
           "500": {
             "description": "Something went wrong"
@@ -737,17 +1384,17 @@
                     "type": "000.0000.000/0000-1"
                   },
                   "address": {
-                    "type": "String"
+                    "type": "string"
                   },
                   "rating": {
-                    "type": "Number"
+                    "type": "number"
                   },
                   "units": {
-                    "type": "Array",
+                    "type": "array",
                     "$ref": "RestaurantUnit"
                   },
                   "attendants": {
-                    "type": "Array",
+                    "type": "array",
                     "$ref": "User"
                   }
                 }
@@ -757,61 +1404,557 @@
         }
       }
     },
-    "/restaurants/:id/products": {
+    "/units/": {
       "post": {
-        "summary": "Register a product/food on registered Restaraunt",
-        "description": "Endpoint to create product(food) restaurant",
-        "tags": ["Foods"],
-        "security": [{ "bearerAuth": [] }],
+        "summary": "Register a restaurant Unit",
+        "description": "Endpoint to register a restaurant Unit",
+        "tags": [
+          "Restaurant Units"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cnpj": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "object",
+                    "properties": {
+                      "zipCode": {
+                        "type": "string"
+                      },
+                      "street": {
+                        "type": "string"
+                      },
+                      "number": {
+                        "type": "number"
+                      },
+                      "complement": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "contact": {
+                    "type": "string"
+                  },
+                  "attendants": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "logo": {
+                      "type": "string"
+                    },
+                    "cnpj": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "zipCode": {
+                          "type": "string"
+                        },
+                        "street": {
+                          "type": "string"
+                        },
+                        "number": {
+                          "type": "number"
+                        },
+                        "complement": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "rating": {
+                      "type": "number"
+                    },
+                    "units": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/src/models/RestaurantUnit"
+                      }
+                    },
+                    "attendants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/src/models/User"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Restaurant already exists!"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          }
+        }
+      }
+    },
+    "/units/list/": {
+      "post": {
+        "summary": "List all restaurant Units",
+        "description": "Endpoint to list all restaurant units",
+        "tags": [
+          "Restaurant Units"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cnpj": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "object",
+                    "properties": {
+                      "zipCode": {
+                        "type": "string"
+                      },
+                      "street": {
+                        "type": "string"
+                      },
+                      "number": {
+                        "type": "number"
+                      },
+                      "complement": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "contact": {
+                    "type": "string"
+                  },
+                  "attendants": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/src/models/User"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "logo": {
+                      "type": "string"
+                    },
+                    "cnpj": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "zipCode": {
+                          "type": "string"
+                        },
+                        "street": {
+                          "type": "string"
+                        },
+                        "number": {
+                          "type": "number"
+                        },
+                        "complement": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "rating": {
+                      "type": "number"
+                    },
+                    "units": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/src/models/RestaurantUnit"
+                      }
+                    },
+                    "attendants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/src/models/User"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Restaurant already exists!"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          }
+        }
+      }
+    },
+    "/units/:id/update/": {
+      "patch": {
+        "summary": "Update a restaurant Unit",
+        "description": "Endpoint to update a restaurant unit",
+        "tags": [
+          "Restaurant Units"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": {
-          "in": "path",
-          "id": "number",
-          "required": "true"
+          "name": "id",
+          "type": "number",
+          "required": true
         },
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                 "properties": {
-                    "restaurant": {
-                      "id": "Number"
-                    },
-                    "image": {
-                      "type": "String"
-                    },
-                    "name": {
-                      "type": "String"
-                    },
-                    "quantity": {
-                      "type": "Number"
-                    },
-                    "price": {
-                      "type": "String"
-                    },
-                    "description": {
-                      "type": "String"
+                "type": "object",
+                "properties": {
+                  "cnpj": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "object",
+                    "properties": {
+                      "zipCode": {
+                        "type": "string"
+                      },
+                      "street": {
+                        "type": "string"
+                      },
+                      "number": {
+                        "type": "number"
+                      },
+                      "complement": {
+                        "type": "string"
+                      }
                     }
-                 }
+                  },
+                  "contact": {
+                    "type": "string"
+                  },
+                  "attendants": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/src/models/User"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "logo": {
+                      "type": "string"
+                    },
+                    "cnpj": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "zipCode": {
+                          "type": "string"
+                        },
+                        "street": {
+                          "type": "string"
+                        },
+                        "number": {
+                          "type": "number"
+                        },
+                        "complement": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "rating": {
+                      "type": "number"
+                    },
+                    "units": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/src/models/RestaurantUnit"
+                      }
+                    },
+                    "attendants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/src/models/User"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Restaurant already exists!"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          }
+        }
+      }
+    },
+    "/units/:id/delete/": {
+      "delete": {
+        "summary": "Delete a restaurant Unit",
+        "description": "Endpoint to delete a restaurant unit",
+        "tags": [
+          "Restaurant Units"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": {
+          "name": "id",
+          "type": "number",
+          "required": true
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cnpj": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "object",
+                    "properties": {
+                      "zipCode": {
+                        "type": "string"
+                      },
+                      "street": {
+                        "type": "string"
+                      },
+                      "number": {
+                        "type": "number"
+                      },
+                      "complement": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "contact": {
+                    "type": "string"
+                  },
+                  "attendants": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/src/models/User"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "logo": {
+                      "type": "string"
+                    },
+                    "cnpj": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "zipCode": {
+                          "type": "string"
+                        },
+                        "street": {
+                          "type": "string"
+                        },
+                        "number": {
+                          "type": "number"
+                        },
+                        "complement": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "rating": {
+                      "type": "number"
+                    },
+                    "units": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/src/models/RestaurantUnit"
+                      }
+                    },
+                    "attendants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/src/models/User"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Restaurant already exists!"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Something went wrong"
+          }
+        }
+      }
+    },
+    "/product/": {
+      "post": {
+        "summary": "Register a product/food on registered Restaraunt",
+        "description": "Endpoint to create product(food) restaurant",
+        "tags": [
+          "Foods"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": {
+          "name": "id",
+          "in": "path",
+          "required": true
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "restaurantId": {
+                    "type": "string",
+                    "ref": "Restaurant"
+                  },
+                  "image": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "Number"
+                  },
+                  "price": {
+                    "type": "string"
+                  },
+                  "isAvailable": {
+                    "type": "boolean"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
               },
               "examples": {
-                    "restaurant": {
-                      "id": 1
-                    },
-                    "image": {
-                      "type": "hamburguer-image.jpg"
-                    },
-                    "name": {
-                      "type": "Cheddar Chicken"
-                    },
-                    "quantity": {
-                      "type": 2
-                    },
-                    "price": {
-                      "type": "R$29,90"
-                    },
-                    "description": {
-                      "type": "Burger 140g de frango com bacon, cheddar cremoso, cebola roxa, pimenta do reino, no pão brioche."
-                    }
+                "restaurant": {
+                  "id": 1
+                },
+                "image": {
+                  "type": "hamburguer-image.jpg"
+                },
+                "name": {
+                  "type": "Cheddar Chicken"
+                },
+                "quantity": {
+                  "type": 2
+                },
+                "price": {
+                  "type": "R$29,90"
+                },
+                "isAvailable": {
+                  "type": "Disponível"
+                },
+                "description": {
+                  "type": "Burger 140g de frango com bacon, cheddar cremoso, cebola roxa, pimenta do reino, no pão brioche."
+                }
               }
             }
           }
@@ -836,24 +1979,24 @@
                 "schema": {
                   "properties": {
                     "restaurant": {
-                        "id": "number"
+                      "id": "number"
                     },
                     "image": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "name": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "quantity": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "price": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "description": {
-                      "type": "String"
+                      "type": "string"
                     }
-                 }
+                  }
                 }
               }
             }
@@ -861,61 +2004,73 @@
         }
       }
     },
-     "/restaurants/:id/products/": {
+    "/product/:id/": {
       "get": {
         "summary": "List all products/foods on registered Restaraunt",
         "description": "Endpoint to list all products(foods) restaurant",
-        "tags": ["Foods"],
-        "security": [{ "bearerAuth": [] }],
+        "tags": [
+          "Foods"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": {
+          "name": "id",
           "in": "path",
-          "id": "number",
-          "required": "true"
+          "required": true
         },
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                 "properties": {
-                    "restaurant": {
-                      "type": "Number"
-                    },
-                    "image": {
-                      "type": "String"
-                    },
-                    "name": {
-                      "type": "String"
-                    },
-                    "quantity": {
-                      "type": "Number"
-                    },
-                    "price": {
-                      "type": "String"
-                    },
-                    "description": {
-                      "type": "String"
-                    }
-                 }
+                "properties": {
+                  "restaurantId": {
+                    "type": "number"
+                  },
+                  "image": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "number"
+                  },
+                  "price": {
+                    "type": "string"
+                  },
+                  "isAvailable": {
+                    "type": "boolean"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
               },
               "examples": {
-                    "restaurant": {
-                      "id": 1
-                    },
-                    "image": {
-                      "type": "hamburguer-image.jpg"
-                    },
-                    "name": {
-                      "type": "Cheddar Chicken"
-                    },
-                    "quantity": {
-                      "type": 2
-                    },
-                    "price": {
-                      "type": "R$29,90"
-                    },
-                    "description": {
-                      "type": "Burger 140g de frango com bacon, cheddar cremoso, cebola roxa, pimenta do reino, no pão brioche."
-                    }
+                "restaurant": {
+                  "id": 1
+                },
+                "image": {
+                  "type": "hamburguer-image.jpg"
+                },
+                "name": {
+                  "type": "Cheddar Chicken"
+                },
+                "quantity": {
+                  "type": 2
+                },
+                "price": {
+                  "type": "R$29,90"
+                },
+                "description": {
+                  "type": "Burger 140g de frango com bacon, cheddar cremoso, cebola roxa, pimenta do reino, no pão brioche."
+                },
+                "isAvailable": {
+                  "type": "Disponível"
+                }
               }
             }
           }
@@ -937,7 +2092,7 @@
                 "schema": {
                   "properties": {
                     "restaurant": {
-                        "id": "number"
+                      "id": "number"
                     },
                     "image": {
                       "type": "String"
@@ -954,7 +2109,7 @@
                     "description": {
                       "type": "String"
                     }
-                 }
+                  }
                 }
               }
             }
@@ -962,130 +2117,57 @@
         }
       }
     },
-    "/restaurants/:id/products/:id": {
-      "get": {
-        "summary": "Get a product/food on registered Restaraunt",
-        "description": "Endpoint to get product(food) restaurant",
-        "tags": ["Foods"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "in": "path",
-          "restaurantId": "number",
-          "foodId": "number",
-          "required": "true"
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                 "properties": {
-                    "image": {
-                      "type": "String"
-                    },
-                    "name": {
-                      "type": "String"
-                    },
-                    "category": {
-                      "type": "String"
-                    },
-                    "quantity": {
-                      "type": "Number"
-                    },
-                    "price": {
-                      "type": "String"
-                    },
-                    "description": {
-                      "type": "String"
-                    },
-                    "isAvailable": {
-                      "type": "Boolean"
-                    }
-                 }
-              }
-            }
-          }
-        },
-        "responses": {
-          "400": {
-            "description": "Bad request"
-          },
-          "409": {
-            "description": "Product does not exist"
-          },
-          "500": {
-            "description": "Something went wrong"
-          },
-          "200": {
-            "description": "OK!",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "properties": {
-                    "restaurant": {
-                        "id": "number"
-                    },
-                    "image": {
-                      "type": "String"
-                    },
-                    "name": {
-                      "type": "String"
-                    },
-                    "quantity": {
-                      "type": "Number"
-                    },
-                    "price": {
-                      "type": "Number"
-                    },
-                    "description": {
-                      "type": "String"
-                    }
-                 }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/restaurants/:id/products/:id/update": {
+    "/product/:id/update/": {
       "patch": {
         "summary": "Update a product/food on registered Restaraunt",
         "description": "Endpoint to update product(food) restaurant",
-        "tags": ["Foods"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "in": "path",
-          "restaurantId": "number",
-          "foodId": "number",
-          "required": "true"
-        },
+        "tags": [
+          "Foods"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                 "properties": {
-                    "image": {
-                      "type": "String"
-                    },
-                    "name": {
-                      "type": "String"
-                    },
-                    "category": {
-                      "type": "String"
-                    },
-                    "quantity": {
-                      "type": "Number"
-                    },
-                    "price": {
-                      "type": "String"
-                    },
-                    "description": {
-                      "type": "String"
-                    },
-                    "isAvailable": {
-                      "type": "Boolean"
-                    }
-                 }
+                "properties": {
+                  "image": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "number"
+                  },
+                  "price": {
+                    "type": "string"
+                  },
+                  "isAvailable": {
+                    "type": "boolean"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
               }
             }
           }
@@ -1107,24 +2189,27 @@
                 "schema": {
                   "properties": {
                     "restaurant": {
-                        "id": "number"
+                      "id": "number"
                     },
                     "image": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "name": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "quantity": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "price": {
-                      "type": "Number"
+                      "type": "number"
+                    },
+                    "isAvailable": {
+                      "type": "boolean"
                     },
                     "description": {
-                      "type": "String"
+                      "type": "string"
                     }
-                 }
+                  }
                 }
               }
             }
@@ -1132,49 +2217,30 @@
         }
       }
     },
-    "/restaurants/:id/products/:id/delete": {
+    "/product/:id/delete/": {
       "delete": {
         "summary": "Delete a product/food on registered Restaraunt",
         "description": "Endpoint to delete product(food) restaurant",
-        "tags": ["Foods"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "in": "path",
-          "restaurantId": "number",
-          "foodId": "number",
-          "required": "true"
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                 "properties": {
-                    "image": {
-                      "type": "String"
-                    },
-                    "name": {
-                      "type": "String"
-                    },
-                    "category": {
-                      "type": "String"
-                    },
-                    "quantity": {
-                      "type": "Number"
-                    },
-                    "price": {
-                      "type": "String"
-                    },
-                    "description": {
-                      "type": "String"
-                    },
-                    "isAvailable": {
-                      "type": "Boolean"
-                    }
-                 }
-              }
-            }
+        "tags": [
+          "Foods"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
           }
-        },
+        ],
+        "parameters": [
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "400": {
             "description": "Bad request"
@@ -1192,24 +2258,24 @@
                 "schema": {
                   "properties": {
                     "restaurant": {
-                        "id": "number"
+                      "id": "number"
                     },
                     "image": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "name": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "quantity": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "price": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "description": {
-                      "type": "String"
+                      "type": "string"
                     }
-                 }
+                  }
                 }
               }
             }
@@ -1217,59 +2283,78 @@
         }
       }
     },
-    "/user/:id/:restaurantId/request": {
+    "/request/": {
       "post": {
         "summary": "Create request in a Restaraunt from a User/GuestLogin",
         "description": "Endpoint to create a request",
-        "tags": ["Order"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "in": "path",
-          "id": "number",
-          "restaurantId": "number",
-          "required": "true"
-        },
+        "tags": [
+          "Order"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "restaurantId",
+            "in": "path",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                 "properties": {
-                    "restaurant": {
-                      "type": "String"
-                    },
-                    "customer": {
-                      "type": "String"
-                    },
+                "properties": {
+                  "restaurant": {
+                    "type": "string"
+                  },
+                  "customer": {
+                    "type": "string"
+                  },
+                  "items": {
+                    "type": "array",
+                    "$ref": "Foods"
+                  },
+                  "status": {
+                    "type": "array",
                     "items": {
-                      "type": "Array",
-                      "$ref": "Foods"
-                    },
-                    "status": {
-                      "type": "Array",
-                      "items": {
-                        "type": "String",
-                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
-                      }
-                    },
-                    "attendant": {
-                      "type": "String"
-                    },
-                    "table": {
-                      "type": "Number"
-                    },
-                    "discountTicket": {
-                      "type": "String"
-                    },
-                    "totalAmount": {
-                      "type": "Number"
-                    },
-                    "isPaid": {
-                      "type": "Boolean"
-                    },
-                    "paidAt": {
-                      "type": "Date"
+                      "type": "string",
+                      "enum": [
+                        "Aguardando aprovação",
+                        "Ingredientes faltando",
+                        "Produzindo",
+                        "Pronto",
+                        "Entregue",
+                        "Cancelado"
+                      ]
                     }
-                 }
+                  },
+                  "attendant": {
+                    "type": "string"
+                  },
+                  "table": {
+                    "type": "number"
+                  },
+                  "discountTicket": {
+                    "type": "string"
+                  },
+                  "totalAmount": {
+                    "type": "number"
+                  },
+                  "isPaid": {
+                    "type": "boolean"
+                  },
+                  "paidAt": {
+                    "type": "date"
+                  }
+                }
               }
             }
           }
@@ -1291,41 +2376,48 @@
                 "schema": {
                   "properties": {
                     "restaurant": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "customer": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "items": {
-                      "type": "Array",
+                      "type": "array",
                       "$ref": "Foods"
                     },
                     "status": {
-                      "type": "Array",
+                      "type": "array",
                       "items": {
-                        "type": "String",
-                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                        "type": "string",
+                        "enum": [
+                          "Aguardando aprovação",
+                          "Ingredientes faltando",
+                          "Produzindo",
+                          "Pronto",
+                          "Entregue",
+                          "Cancelado"
+                        ]
                       }
                     },
                     "attendant": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "table": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "discountTicket": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "totalAmount": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "isPaid": {
-                      "type": "Boolean"
+                      "type": "boolean"
                     },
                     "paidAt": {
-                      "type": "Date"
+                      "type": "date"
                     }
-                 }
+                  }
                 }
               }
             }
@@ -1333,64 +2425,22 @@
         }
       }
     },
-    "/user/:id/request/list": {
+    "/request/list/": {
       "get": {
         "summary": "List all request from a User (exclusively)",
         "description": "Endpoint to list requests from user",
-        "tags": ["Order"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "in": "path",
-          "id": "string",
-          "required": "true"
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                 "properties": {
-                  "type": "Array",
-                  "schema": {
-                    "restaurant": {
-                      "type": "String"
-                    },
-                    "customer": {
-                      "type": "String"
-                    },
-                    "items": {
-                      "type": "Array",
-                      "$ref": "Foods"
-                    },
-                    "status": {
-                      "type": "Array",
-                      "items": {
-                        "type": "String",
-                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
-                      }
-                    },
-                    "attendant": {
-                      "type": "String"
-                    },
-                    "table": {
-                      "type": "Number"
-                    },
-                    "discountTicket": {
-                      "type": "String"
-                    },
-                    "totalAmount": {
-                      "type": "Number"
-                    },
-                    "isPaid": {
-                      "type": "Boolean"
-                    },
-                    "paidAt": {
-                      "type": "Date"
-                    }
-                 }
-                }
-              }
-            }
+        "tags": [
+          "Order"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
           }
+        ],
+        "parameters": {
+          "name": "id",
+          "in": "path",
+          "required": true
         },
         "responses": {
           "400": {
@@ -1409,41 +2459,48 @@
                 "schema": {
                   "properties": {
                     "restaurant": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "customer": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "items": {
-                      "type": "Array",
+                      "type": "array",
                       "$ref": "Foods"
                     },
                     "status": {
-                      "type": "Array",
+                      "type": "array",
                       "items": {
-                        "type": "String",
-                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                        "type": "string",
+                        "enum": [
+                          "Aguardando aprovação",
+                          "Ingredientes faltando",
+                          "Produzindo",
+                          "Pronto",
+                          "Entregue",
+                          "Cancelado"
+                        ]
                       }
                     },
                     "attendant": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "table": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "discountTicket": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "totalAmount": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "isPaid": {
-                      "type": "Boolean"
+                      "type": "boolean"
                     },
                     "paidAt": {
-                      "type": "Date"
+                      "type": "date"
                     }
-                 }
+                  }
                 }
               }
             }
@@ -1451,65 +2508,30 @@
         }
       }
     },
-    "/user/:id/request/:id": {
+    "/request/:id/": {
       "get": {
         "summary": "List/detail specific request from a User (exclusively)",
         "description": "Endpoint to request detail from user",
-        "tags": ["Order"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "in": "path",
-          "id": "string",
-          "required": "true"
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                 "properties": {
-                  "type": "Array",
-                  "schema": {
-                    "restaurant": {
-                      "type": "String"
-                    },
-                    "customer": {
-                      "type": "String"
-                    },
-                    "items": {
-                      "type": "Array",
-                      "$ref": "Foods"
-                    },
-                    "status": {
-                      "type": "Array",
-                      "items": {
-                        "type": "String",
-                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
-                      }
-                    },
-                    "attendant": {
-                      "type": "String"
-                    },
-                    "table": {
-                      "type": "Number"
-                    },
-                    "discountTicket": {
-                      "type": "String"
-                    },
-                    "totalAmount": {
-                      "type": "Number"
-                    },
-                    "isPaid": {
-                      "type": "Boolean"
-                    },
-                    "paidAt": {
-                      "type": "Date"
-                    }
-                 }
-                }
-              }
-            }
+        "tags": [
+          "Order"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
           }
-        },
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "400": {
             "description": "Bad request"
@@ -1530,41 +2552,48 @@
                 "schema": {
                   "properties": {
                     "restaurant": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "customer": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "items": {
-                      "type": "Array",
+                      "type": "array",
                       "$ref": "Foods"
                     },
                     "status": {
-                      "type": "Array",
+                      "type": "array",
                       "items": {
-                        "type": "String",
-                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                        "type": "string",
+                        "enum": [
+                          "Aguardando aprovação",
+                          "Ingredientes faltando",
+                          "Produzindo",
+                          "Pronto",
+                          "Entregue",
+                          "Cancelado"
+                        ]
                       }
                     },
                     "attendant": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "table": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "discountTicket": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "totalAmount": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "isPaid": {
-                      "type": "Boolean"
+                      "type": "boolean"
                     },
                     "paidAt": {
-                      "type": "Date"
+                      "type": "date"
                     }
-                 }
+                  }
                 }
               }
             }
@@ -1572,61 +2601,80 @@
         }
       }
     },
-    "/user/:id/request/:id/update": {
+    "/request/:id/update/": {
       "patch": {
         "summary": "Update request from a User (exclusively)",
         "description": "Endpoint to update a request from user",
-        "tags": ["Order"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "in": "path",
-          "id": "string",
-          "requestId": "string",
-          "required": "true"
-        },
+        "tags": [
+          "Order"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                 "properties": {
-                  "type": "Array",
+                "properties": {
+                  "type": "array",
                   "schema": {
                     "restaurant": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "customer": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "items": {
-                      "type": "Array",
+                      "type": "array",
                       "$ref": "Foods"
                     },
                     "status": {
-                      "type": "Array",
+                      "type": "array",
                       "items": {
-                        "type": "String",
-                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                        "type": "string",
+                        "enum": [
+                          "Aguardando aprovação",
+                          "Ingredientes faltando",
+                          "Produzindo",
+                          "Pronto",
+                          "Entregue",
+                          "Cancelado"
+                        ]
                       }
                     },
                     "attendant": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "table": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "discountTicket": {
-                      "type": "String"
+                      "type": "string"
                     },
                     "totalAmount": {
-                      "type": "Number"
+                      "type": "number"
                     },
                     "isPaid": {
-                      "type": "Boolean"
+                      "type": "boolean"
                     },
                     "paidAt": {
-                      "type": "Date"
+                      "type": "date"
                     }
-                 }
+                  }
                 }
               }
             }
@@ -1662,7 +2710,14 @@
                       "type": "Array",
                       "items": {
                         "type": "String",
-                        "enum": ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"]
+                        "enum": [
+                          "Aguardando aprovação",
+                          "Ingredientes faltando",
+                          "Produzindo",
+                          "Pronto",
+                          "Entregue",
+                          "Cancelado"
+                        ]
                       }
                     },
                     "attendant": {
@@ -1683,7 +2738,7 @@
                     "paidAt": {
                       "type": "Date"
                     }
-                 }
+                  }
                 }
               }
             }
@@ -1691,18 +2746,30 @@
         }
       }
     },
-    "/user/:id/request/:id/delete": {
+    "/request/:id/delete/": {
       "delete": {
-        "summary": "Update request from a User (exclusively)",  
+        "summary": "Delete request from a User (exclusively)",
         "description": "Endpoint to update a request from user",
-        "tags": ["Order"],
-        "security": [{ "bearerAuth": [] }],
-        "parameters": {
-          "in": "path",
-          "id": "string",
-          "requestId": "string",
-          "required": "true"
-        },
+        "tags": [
+          "Order"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "400": {
             "description": "Bad request"

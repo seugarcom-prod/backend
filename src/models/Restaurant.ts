@@ -6,8 +6,20 @@ export interface IRestaurant extends Document {
   name: string;
   logo: string;
   cnpj: string;
-  address: string;
+  socialName: string;
+  address: {
+    zipCode: string;
+    street: string;
+    number: number;
+    complement: string
+  };
   rating: number;
+  specialty: string;
+  phone: string;
+  admin: {
+    fullName: typeof mongoose.Schema.Types.String | IUser;
+    cpf: typeof mongoose.Schema.Types.String | IUser;
+  }
   units: typeof mongoose.Schema.Types.ObjectId | IRestaurantUnit;
   attendants: typeof mongoose.Schema.Types.ObjectId | IUser;
 }
@@ -26,12 +38,46 @@ const restaurantSchema = new Schema(
       type: String,
       required: true,
     },
-    address: {
+    socialName: {
       type: String,
-      required: true,
+    },
+    address: {
+      zipCode: {
+        type: String,
+        required: true,
+      },
+      street: {
+        type: String,
+        required: true
+      },
+      number: {
+        type: Number,
+        required: true
+      },
+      complement: {
+        type: String,
+      }
     },
     rating: {
       type: Number,
+    },
+    specialty: {
+      type: String,
+      required: true
+    },
+    phone: {
+      type: String,
+      required: true
+    },
+    admin: {
+      fullName: {
+        type: mongoose.Schema.Types.String,
+        ref: "User"
+      },
+      cpf: {
+        type: mongoose.Schema.Types.String,
+        ref: "User"
+      }
     },
     units: [
       {

@@ -10,18 +10,18 @@ import { isAdmin, isAuthenticated } from "../middlewares/index.js";
 
 export default (foodsRouter: express.Router) => {
   foodsRouter.post(
-    "/restaurant/:id/products",
+    "/restaurant/:id/products/",
     isAuthenticated,
     isAdmin,
     createFoodController
   );
   foodsRouter.get(
-    "/restaurant/:id/products",
+    "/restaurant/:id/products/",
     isAuthenticated,
     getAllFoodsController
   );
   foodsRouter.get(
-    "/restaurant/:id/products/:id",
+    "/restaurant/:id/products/",
     isAuthenticated,
     getFoodByIdController
   );

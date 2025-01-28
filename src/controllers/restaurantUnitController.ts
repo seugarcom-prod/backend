@@ -79,7 +79,7 @@ export const updateRestaurantUnitController = async (
     if (restaurantUnit) {
       restaurantUnit.address = address;
       restaurantUnit.cnpj = cnpj;
-      restaurantUnit.contact = contact;
+      restaurantUnit.phone = contact;
       restaurantUnit.manager = manager;
 
       await updateRestaurantUnit(id, restaurantUnit);
