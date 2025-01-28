@@ -8,7 +8,11 @@ export interface IUser extends Document {
   lastName: string;
   email: string;
   phone: string;
-  authentication: string;
+  authentication: {
+    password: string;
+    salt: string;
+    sessionToken: string;
+  };
   role: "ADMIN" | "MANAGER" | "ATTENDANT" | "CLIENT";
 }
 

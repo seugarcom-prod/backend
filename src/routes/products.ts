@@ -5,7 +5,7 @@ import {
   getAllFoodsController,
   getFoodByIdController,
   updateFoodController,
-} from "../controllers/FoodController.ts";
+} from "../controllers/ProductController.ts";
 import { isAdmin, isAuthenticated } from "../middlewares/index.js";
 
 export default (foodsRouter: express.Router) => {

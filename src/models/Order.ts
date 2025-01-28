@@ -1,55 +1,71 @@
-import mongoose from "mongoose";
-import { IRestaurant, IUser } from "./index";
-
-const Schema = mongoose.Schema;
+import mongoose, { Document, Schema } from "mongoose";
+import { IRestaurant, IUser } from "./index"; // Certifique-se de que IRestaurant e IUser estão corretamente definidos
+import { ProductModel } from "./Products";
 
 export interface IOrder extends Document {
-  items: Array<{ name: string; quantity: number; description: string }>;
+  restaurant: mongoose.Schema.Types.ObjectId | IRestaurant;
+  customer: mongoose.Schema.Types.ObjectId | IUser;
+  items: Array<{
+    product: mongoose.Schema.Types.ObjectId;
+    quantity: number;
+    price: number;
+  }>;
+  table: number;
   isPaid: boolean;
-  totalPrice: number;
-  status: Array<string>;
-  paidAt: Date;
-  restaurant: typeof mongoose.Schema.Types.ObjectId | IRestaurant;
-  customer: typeof mongoose.Schema.Types.ObjectId | IUser;
+  totalAmount: number;
+  discountTicket?: string;
+  status: string;
+  paidAt?: Date;
 }
 
-const orderSchema = new Schema(
+const orderSchema = new Schema<IOrder>(
   {
-    restaurantId: {
+    restaurant: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Restaurant",
+      required: true,
     },
     customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
+      ref: "User",
+      required: true,
     },
     items: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Foods"
-      }
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        price: {
+          type: Number,
+          required: true,
+        },
+      },
     ],
-    status: {
-      type: String,
-      enum: ["Aguardando aprovação", "Ingredientes faltando", "Produzindo", "Pronto", "Entregue", "Cancelado"],
-      default: "Aguardando aprovação",
-    },
-    attendant: {
-      type: String,
-    },
     table: {
       type: Number,
-      ref: "RestaurantUnit"
-    },
-    discountTicket: {
-      type: String,
-    },
-    totalAmount: {
-      type: Number,
+      required: true,
     },
     isPaid: {
       type: Boolean,
       default: false,
+    },
+    totalAmount: {
+      type: Number,
+      required: true,
+    },
+    discountTicket: {
+      type: String,
+    },
+    status: {
+      type: String,
+      enum: ["Aguardando aprovação", "Produzindo", "Pronto", "Entregue", "Cancelado"],
+      default: "Aguardando aprovação",
     },
     paidAt: {
       type: Date,
@@ -60,27 +76,38 @@ const orderSchema = new Schema(
 
 export const OrderModel = mongoose.model<IOrder>("Order", orderSchema);
 
-// METHODS
+// Métodos
 
-// Get All User Requests by Id
-export const getOrders = (id: string) => id && OrderModel.find();
+// Obter todos os pedidos
+export const getOrders = () => OrderModel.find().populate("items.product");
 
-// Get Request by Id for details
-export const getOrderById = (id: string) => OrderModel.findById(id);
+// Obter pedido por ID
+export const getOrderById = (id: string) => OrderModel.findById(id).populate("items.product");
 
-// Get Request by Date
-export const getOrderByClientName = (name: string) =>
-  OrderModel.findOne({ name });
+// Criar pedido
+export const createOrder = async (values: Record<string, any>) => {
+  // Calcular o totalAmount com base nos itens do pedido
+  const items = values.items;
+  let totalAmount = 0;
 
-// Create Request
-export const createOrder = (values: Record<string, any>, userId: string, restaurantId: string) =>
-  new OrderModel(values, {_id: userId}, {restaurantId: restaurantId}).save().then((request) => request.toObject());
+  for (const item of items) {
+    const product = await ProductModel.findById(item.product);
+    if (!product || !product.isAvailable) {
+      throw new Error(`Produto ${item.product} indisponível ou inválido`);
+    }
+    totalAmount += product.price * item.quantity;
+    item.price = product.price; // Atualizar o preço no item do pedido
+  }
 
-// Delete Request
-export const deleteOrder = (id: string) =>
-  OrderModel.findOneAndDelete({ _id: id });
+  values.totalAmount = totalAmount;
 
-// Update Request
-export const updateOrder = (id: string, requestId: string, values: Record<string, any>) =>{
-  OrderModel.findByIdAndUpdate({_id: id}, {requestId: requestId}, values);
-}
+  const order = new OrderModel(values);
+  return order.save().then((order) => order.toObject());
+};
+
+// Deletar pedido
+export const deleteOrder = (id: string) => OrderModel.findOneAndDelete({ _id: id });
+
+// Atualizar pedido
+export const updateOrder = (id: string, values: Record<string, any>) =>
+  OrderModel.findByIdAndUpdate(id, values, { new: true }).populate("items.product");
