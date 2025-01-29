@@ -4,8 +4,6 @@ import {
   getUserById,
   deleteUser,
   getUserByEmail,
-  getUserBySessionToken,
-  updateUser,
   createUser,
   UserModel,
 } from "../models/User.ts";
@@ -21,7 +19,7 @@ export const createUserController = async (
     if (!email || !password || !firstName || !phone) return res.sendStatus(400);
 
     const existingUser = await getUserByEmail(email);
-    
+
     if (existingUser) res.sendStatus(400);
 
     const salt = random();
@@ -59,12 +57,12 @@ export const getAllUsersController = async (
     const users = await getUsers();
 
     return res
-    .sendStatus(200)
-    .json(users);
+      .sendStatus(200)
+      .json(users);
   } catch (error) {
     console.log(error);
     return res
-    .sendStatus(400);
+      .sendStatus(400);
   }
 };
 
@@ -79,15 +77,15 @@ export const getUserByIdController = async (
       .then((userFound) => {
         console.log(userFound);
         res
-        .sendStatus(200)
-        .json({ user: UserModel });
+          .sendStatus(200)
+          .json({ user: UserModel });
       })
       .catch((err) => console.log(err));
   } catch (error) {
     console.log(error);
     return res
-    .status(500)
-    .json({ message: "Something went wrong" });
+      .status(500)
+      .json({ message: "Something went wrong" });
   }
 };
 
@@ -112,13 +110,13 @@ export const updateUserController = async (
     }
 
     return res
-    .sendStatus(200)
-    .json(user);
+      .sendStatus(200)
+      .json(user);
   } catch (error) {
     console.log(error);
     return res
-    .status(500)
-    .json({ message: "Something went wrong" });
+      .status(500)
+      .json({ message: "Something went wrong" });
   }
 };
 
@@ -132,8 +130,8 @@ export const deleteUserController = async (
     const deletedUser = await deleteUser(id);
 
     return res
-    .json(deletedUser)
-    .sendStatus(200);
+      .json(deletedUser)
+      .sendStatus(200);
   } catch (error) {
     console.log(error);
   }

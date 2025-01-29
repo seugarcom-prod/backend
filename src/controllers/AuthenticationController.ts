@@ -1,9 +1,10 @@
-import express from "express";
+import { Request, Response } from "express";
 import { createUser, getUserByEmail } from "../models/User";
 import { random, authentication } from "../helpers";
 import { cpf } from "cpf-cnpj-validator";
+import { emailRegex } from "../utils/regex";
 
-export const login = async (req: express.Request, res: express.Response) => {
+export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -41,7 +42,6 @@ export const login = async (req: express.Request, res: express.Response) => {
       path: "/",
       httpOnly: true, // Protege o cookie contra acesso via JavaScript
       secure: process.env.NODE_ENV === "production", // Usa HTTPS em produção
-      maxAge: 86400000, // 1 dia de duração
     });
 
     // Retorna o usuário sem informações sensíveis
@@ -54,7 +54,7 @@ export const login = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export const GuestLogin = async (req: express.Request, res: express.Response) => {
+export const GuestLogin = async (req: Request, res: Response) => {
   try {
     const { document, email } = req.body;
 
@@ -69,7 +69,6 @@ export const GuestLogin = async (req: express.Request, res: express.Response) =>
     }
 
     // Validação básica do email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Email inválido." });
     }
@@ -85,7 +84,7 @@ export const GuestLogin = async (req: express.Request, res: express.Response) =>
   }
 };
 
-export const register = async (req: express.Request, res: express.Response) => {
+export const register = async (req: Request, res: Response) => {
   try {
     const { email, firstName, lastName, phone, password } = req.body;
 
@@ -123,7 +122,7 @@ export const register = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export const logout = (req: express.Request, res: express.Response) => {
+export const logout = (req: Request, res: Response) => {
   try {
     // Remove o cookie de sessão
     res.clearCookie("SESSION_TOKEN", {

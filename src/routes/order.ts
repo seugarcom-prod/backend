@@ -1,9 +1,8 @@
 import express from "express";
 import {
-  createOrderController,
+  createOrderHandler,
   deleteOrderController,
-  getAllOrdersController,
-  getOrderByClientNameController,
+  getRestaurantUnitOrdersHandler,
   getOrderByIdController,
   updateOrderController,
 } from "../controllers/OrderController.ts";
@@ -13,12 +12,12 @@ export default (orderRouter: express.Router) => {
   orderRouter.post(
     "/user/:id/:restaurantId/request",
     // isAuthenticated,
-    createOrderController
+    createOrderHandler
   );
   orderRouter.get(
     "/user/:id/request/list",
     // isAuthenticated,
-    getAllOrdersController
+    getRestaurantUnitOrdersHandler
   );
   orderRouter.get(
     "/user/:id/request/:id",
@@ -29,11 +28,6 @@ export default (orderRouter: express.Router) => {
     "/user/:id/request/:id/update",
     // isAuthenticated,
     updateOrderController
-  );
-  orderRouter.get(
-    "/user/:id/requests",
-    // isAuthenticated,
-    getOrderByClientNameController
   );
   orderRouter.delete(
     "/user/:id/request/:id/delete",
