@@ -14,6 +14,7 @@ export interface IRestaurantUnit extends Document {
   manager: string;
   phone: string;
   attendants: typeof mongoose.Schema.Types.ObjectId | IUser;
+  orders: mongoose.Schema.Types.ObjectId[];
 };
 
 const restaurantUnitSchema = new Schema({
@@ -52,6 +53,12 @@ const restaurantUnitSchema = new Schema({
       ref: "User",
     },
   ],
+  orders: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Order"
+    }
+  ]
 });
 
 // 3. Create a Model.

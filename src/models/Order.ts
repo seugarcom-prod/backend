@@ -4,7 +4,7 @@ import { ProductModel } from "./Products";
 
 export interface IOrder extends Document {
   restaurant: mongoose.Schema.Types.ObjectId | IRestaurant;
-  customer: mongoose.Schema.Types.ObjectId | IUser;
+  user: mongoose.Schema.Types.ObjectId | IUser;
   items: Array<{
     product: mongoose.Schema.Types.ObjectId;
     quantity: number;
@@ -25,7 +25,7 @@ const orderSchema = new Schema<IOrder>(
       ref: "Restaurant",
       required: true,
     },
-    customer: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,

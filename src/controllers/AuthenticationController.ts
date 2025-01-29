@@ -1,74 +1,106 @@
 import express from "express";
-import { createUser, getUserByEmail } from "../models/User.ts";
+import { createUser, getUserByEmail } from "../models/User";
 import { random, authentication } from "../helpers";
-import { cpf } from 'cpf-cnpj-validator';
+import { cpf } from "cpf-cnpj-validator";
 
 export const login = async (req: express.Request, res: express.Response) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) return res.sendStatus(400);
+    // Validação dos campos obrigatórios
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email e senha são obrigatórios." });
+    }
 
+    // Busca o usuário pelo email, incluindo o salt e a senha
     const user = await getUserByEmail(email).select(
       "+authentication.salt +authentication.password"
     );
 
+    // Verifica se o usuário existe
     if (!user) {
-      return res.sendStatus(400);
+      return res.status(404).json({ message: "Usuário não encontrado." });
     }
 
-    if (!user || !user.authentication || !user.authentication.salt) {
-      return res.sendStatus(403);
+    // Verifica se o usuário tem autenticação configurada
+    if (!user.authentication || !user.authentication.salt) {
+      return res.status(500).json({ message: "Erro na configuração do usuário." });
     }
 
+    // Gera um novo salt e cria um token de sessão
     const salt = random();
-    user.authentication.sessionToken = authentication(
-      salt,
-      user._id.toString()
-    );
+    const sessionToken = authentication(salt, user._id.toString());
 
+    // Atualiza o token de sessão do usuário e salva no banco de dados
+    user.authentication.sessionToken = sessionToken;
     await user.save();
 
-    res.cookie("THEBIGCOOKIE", user.authentication.sessionToken, {
+    // Configura o cookie de sessão
+    res.cookie("SESSION_TOKEN", sessionToken, {
       domain: "localhost",
       path: "/",
+      httpOnly: true, // Protege o cookie contra acesso via JavaScript
+      secure: process.env.NODE_ENV === "production", // Usa HTTPS em produção
+      maxAge: 86400000, // 1 dia de duração
     });
 
-    return res.status(200).json(user).end();
+    // Retorna o usuário sem informações sensíveis
+    const userResponse = JSON.parse(JSON.stringify(user));
+    delete userResponse.authentication;
+    return res.status(200).json(userResponse);
   } catch (error) {
-    console.log(error);
-    return res.sendStatus(400);
+    console.error("Erro no login:", error);
+    return res.status(500).json({ message: "Erro interno no servidor." });
   }
 };
 
-export const GuestLogin = async(req: express.Request, res: express.Response) => {
-    try {
+export const GuestLogin = async (req: express.Request, res: express.Response) => {
+  try {
     const { document, email } = req.body;
 
-    if (!document || !email) return res.sendStatus(400);
-
-    const validDocument = cpf.isValid(document);
-
-    if (!validDocument) {
-      return res.sendStatus(400);
+    // Validação dos campos obrigatórios
+    if (!document || !email) {
+      return res.status(400).json({ message: "CPF e email são obrigatórios." });
     }
 
-    return res.status(200).json().end();
+    // Validação do CPF
+    if (!cpf.isValid(document)) {
+      return res.status(400).json({ message: "CPF inválido." });
+    }
+
+    // Validação básica do email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Email inválido." });
+    }
+
+    // Aqui você pode adicionar lógica para criar um usuário temporário (guest)
+    // ou apenas retornar um token de sessão temporário.
+
+    // Retorna uma resposta de sucesso
+    return res.status(200).json({ message: "Login como convidado realizado com sucesso." });
   } catch (error) {
-    console.log(error);
-    return res.sendStatus(400);
+    console.error("Erro no GuestLogin:", error);
+    return res.status(500).json({ message: "Erro interno no servidor." });
   }
-}
+};
 
 export const register = async (req: express.Request, res: express.Response) => {
   try {
     const { email, firstName, lastName, phone, password } = req.body;
 
-    if (!email || !password || !firstName || !phone) return res.sendStatus(400);
+    // Validação dos campos obrigatórios
+    if (!email || !password || !firstName || !phone) {
+      return res.status(400).json({ message: "Todos os campos são obrigatórios." });
+    }
 
-    const existingUser = await getUserByEmail(email);
-    if (existingUser) res.sendStatus(400);
+    // Verifica se o usuário já existe
+    const existingUser = await getUserByEmail(email).lean();
+    if (existingUser) {
+      return res.status(400).json({ message: "Email já cadastrado." });
+    }
 
+    // Cria o usuário com uma senha segura
     const salt = random();
     const user = await createUser({
       firstName,
@@ -81,9 +113,27 @@ export const register = async (req: express.Request, res: express.Response) => {
       },
     });
 
-    return res.status(200).json(user).end();
+    // Retorna o usuário sem informações sensíveis
+    const userResponse = { ...user };
+    delete userResponse.authentication;
+    return res.status(201).json(userResponse);
   } catch (error) {
-    console.log(error);
-    return res.sendStatus(400);
+    console.error("Erro no registro:", error);
+    return res.status(500).json({ message: "Erro interno no servidor." });
+  }
+};
+
+export const logout = (req: express.Request, res: express.Response) => {
+  try {
+    // Remove o cookie de sessão
+    res.clearCookie("SESSION_TOKEN", {
+      domain: "localhost",
+      path: "/",
+    });
+
+    return res.status(200).json({ message: "Logout realizado com sucesso." });
+  } catch (error) {
+    console.error("Erro no logout:", error);
+    return res.status(500).json({ message: "Erro interno no servidor." });
   }
 };

@@ -1,38 +1,59 @@
 import express from "express";
-import { validationResult } from "express-validator";
+import { Request, Response } from "express";
 import {
-  createOrder,
-  deleteOrder,
   getOrders,
   getOrderById,
   updateOrder,
+  OrderModel,
 } from "../models/Order.ts";
-import { ProductModel } from "../models/Products.ts";
+import { RestaurantUnitModel } from "../models/RestaurantUnit.ts";
+import { UserModel } from "../models/User.ts";
 
-export const createOrderController = async (
-  req: express.Request,
-  res: express.Response
-) => {
+export const createOrderHandler = async (req: Request, res: Response) => {
+  const { userId, restaurantUnitId, items, totalAmount } = req.body;
+
   try {
-    const { restaurant, customer, items, table, discountTicket } = req.body;
-
-    const order = await createOrder({
-      restaurant,
-      customer,
+    // 1. Criar o pedido
+    const order = new OrderModel({
+      user: userId,
+      restaurantUnit: restaurantUnitId,
       items,
-      table,
-      discountTicket,
+      totalAmount,
     });
+
+    await order.save();
+
+    // 2. Atualizar o documento do User
+    await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $push: {
+          orders: order._id
+        }
+      }, // Adiciona o ID do pedido à lista de pedidos do usuário
+      { new: true }
+    );
+
+    // 3. Atualizar o documento do RestaurantUnit
+    await RestaurantUnitModel.findByIdAndUpdate(
+      restaurantUnitId,
+      {
+        $push: {
+          orders: order._id
+        }
+      }, // Adiciona o ID do pedido à lista de pedidos da unidade
+      { new: true }
+    );
 
     res.status(201).json(order);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: "Erro ao criar pedido", error });
   }
 };
 
 export const updateOrderController = async (
-  req: express.Request,
-  res: express.Response
+  req: Request,
+  res: Response
 ) => {
   try {
     const { id } = req.params;
@@ -65,23 +86,10 @@ export const updateOrderController = async (
   }
 };
 
-export const getAllOrdersController = async (
-  req: express.Request,
-  res: express.Response
-) => {
-  try {
-    const orders = await getOrders();
-
-    return res.status(200).json(orders);
-  } catch (error) {
-    console.log(error);
-    return res.sendStatus(400);
-  }
-};
 
 export const getOrderByIdController = async (
-  req: express.Request,
-  res: express.Response
+  req: Request,
+  res: Response
 ) => {
   try {
     const order = await getOrderById(req.params.id);
@@ -94,9 +102,31 @@ export const getOrderByIdController = async (
   }
 };
 
+export const getRestaurantUnitOrdersHandler = async (req: Request, res: Response) => {
+  const { restaurantUnitId } = req.params;
+
+  try {
+    const restaurantUnit = await RestaurantUnitModel.findById(restaurantUnitId).populate({
+      path: "orders",
+      populate: {
+        path: "user",
+        select: "name email"
+      },
+    });
+
+    if (!restaurantUnit) {
+      return res.status(404).json({ message: "Unidade de restaurante não encontrada" });
+    }
+
+    res.json(restaurantUnit.orders);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao buscar pedidos da unidade", error });
+  }
+};
+
 export const deleteOrderController = async (
-  req: express.Request,
-  res: express.Response
+  req: Request,
+  res: Response
 ) => {
   try {
     const { status, isPaid } = req.body;
