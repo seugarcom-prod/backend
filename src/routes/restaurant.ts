@@ -1,4 +1,4 @@
-import express from "express";
+import { Router } from "express";
 import {
   createRestaurantController,
   deleteRestaurantController,
@@ -6,31 +6,28 @@ import {
   getRestaurantByIdController,
   updateRestaurantController,
 } from "../controllers/RestaurantController.ts";
-import { isAdmin, isAuthenticated } from "../middlewares/index.ts";
+import { isAuthenticated, hasRole } from "../middlewares/index.ts";
 
-export default (restaurantRouter: express.Router) => {
-  // restaurantRouter.post(
-  //   "/restaurant/create",
-  //   isAuthenticated,
-  //   isAdmin,
-  //   createRestaurantController
-  // );
-  // restaurantRouter.get(
-  //   "/restaurants/list",
-  //   isAuthenticated,
-  //   isAdmin,
-  //   getAllRestaurantsController
-  // );
-  // restaurantRouter.get(
-  //   "/restaurants/:id",
-  //   isAuthenticated,
-  //   isAdmin,
-  //   getRestaurantByIdController
-  // );
-
+export default (restaurantRouter: Router) => {
   restaurantRouter.post("/restaurant/create", createRestaurantController);
-  restaurantRouter.get("/restaurant/list", getAllRestaurantsController);
-  restaurantRouter.get("/restaurant/:id", getRestaurantByIdController);
-  restaurantRouter.post("/restaurant/update/:id", updateRestaurantController);
-  restaurantRouter.delete("/restaurant/delete/:id", deleteRestaurantController);
+  restaurantRouter.get("/restaurant/list",
+    isAuthenticated,
+    hasRole("ADMIN"),
+    getAllRestaurantsController
+  );
+  restaurantRouter.get("/restaurant/:id",
+    isAuthenticated,
+    hasRole("ADMIN"),
+    getRestaurantByIdController
+  );
+  restaurantRouter.post("/restaurant/update/:id",
+    isAuthenticated,
+    hasRole("ADMIN"),
+    updateRestaurantController
+  );
+  restaurantRouter.delete("/restaurant/delete/:id",
+    isAuthenticated,
+    hasRole("ADMIN"),
+    deleteRestaurantController
+  );
 };

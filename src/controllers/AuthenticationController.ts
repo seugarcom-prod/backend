@@ -36,50 +36,35 @@ export const login = async (req: Request, res: Response) => {
     user.authentication.sessionToken = sessionToken;
     await user.save();
 
-    // Configura o cookie de sessão
-    res.cookie("SESSION_TOKEN", sessionToken, {
-      domain: "localhost",
-      path: "/",
-      httpOnly: true, // Protege o cookie contra acesso via JavaScript
-      secure: process.env.NODE_ENV === "production", // Usa HTTPS em produção
-    });
+    // Redireciona com base na role do usuário
+    let redirectRoute = "";
+    switch (user.role) {
+      case "ADMIN":
+        redirectRoute = "/dashboard";
+        break;
+      case "ATTENDANT":
+        redirectRoute = "/unit";
+        break;
+      case "CLIENT":
+        redirectRoute = "/restaurant/order";
+        break;
+      default:
+        redirectRoute = "/restaurant/order"; // Rota padrão para GUEST ou roles desconhecidas
+    }
 
-    // Retorna o usuário sem informações sensíveis
-    const userResponse = JSON.parse(JSON.stringify(user));
-    delete userResponse.authentication;
-    return res.status(200).json(userResponse);
+    // Retorna a rota de redirecionamento
+    return res.status(200).json({ redirectRoute });
   } catch (error) {
     console.error("Erro no login:", error);
     return res.status(500).json({ message: "Erro interno no servidor." });
   }
 };
 
-export const GuestLogin = async (req: Request, res: Response) => {
+export const guestLogin = async (req: Request, res: Response) => {
   try {
-    const { document, email } = req.body;
-
-    // Validação dos campos obrigatórios
-    if (!document || !email) {
-      return res.status(400).json({ message: "CPF e email são obrigatórios." });
-    }
-
-    // Validação do CPF
-    if (!cpf.isValid(document)) {
-      return res.status(400).json({ message: "CPF inválido." });
-    }
-
-    // Validação básica do email
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: "Email inválido." });
-    }
-
-    // Aqui você pode adicionar lógica para criar um usuário temporário (guest)
-    // ou apenas retornar um token de sessão temporário.
-
-    // Retorna uma resposta de sucesso
-    return res.status(200).json({ message: "Login como convidado realizado com sucesso." });
+    return res.status(200).json({ redirectRoute: "/restaurant/order" });
   } catch (error) {
-    console.error("Erro no GuestLogin:", error);
+    console.error("Erro no login de convidado:", error);
     return res.status(500).json({ message: "Erro interno no servidor." });
   }
 };

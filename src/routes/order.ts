@@ -1,4 +1,4 @@
-import express from "express";
+import { Router } from "express";
 import {
   createOrderHandler,
   deleteOrderController,
@@ -8,30 +8,30 @@ import {
 } from "../controllers/OrderController.ts";
 import { isAuthenticated } from "../middlewares/index.ts";
 
-export default (orderRouter: express.Router) => {
+export default (orderRouter: Router) => {
   orderRouter.post(
     "/user/:id/:restaurantId/request",
-    // isAuthenticated,
+    isAuthenticated,
     createOrderHandler
   );
   orderRouter.get(
     "/user/:id/request/list",
-    // isAuthenticated,
+    isAuthenticated,
     getRestaurantUnitOrdersHandler
   );
   orderRouter.get(
     "/user/:id/request/:id",
-    // isAuthenticated,
+    isAuthenticated,
     getOrderByIdController
   );
   orderRouter.patch(
     "/user/:id/request/:id/update",
-    // isAuthenticated,
+    isAuthenticated,
     updateOrderController
   );
   orderRouter.delete(
     "/user/:id/request/:id/delete",
-    // isAuthenticated,
+    isAuthenticated,
     deleteOrderController
   );
 };

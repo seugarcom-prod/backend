@@ -1,4 +1,4 @@
-import express from "express";
+import { Router } from "express";
 import {
   createFoodController,
   deleteFoodController,
@@ -6,34 +6,34 @@ import {
   getFoodByIdController,
   updateFoodController,
 } from "../controllers/ProductController.ts";
-import { isAdmin, isAuthenticated } from "../middlewares/index.js";
+import { hasRole, isAuthenticated } from "../middlewares/index.js";
 
-export default (foodsRouter: express.Router) => {
-  foodsRouter.post(
+export default (productsRouter: Router) => {
+  productsRouter.post(
     "/restaurant/:id/products/",
     isAuthenticated,
-    isAdmin,
+    hasRole("ADMIN"),
     createFoodController
   );
-  foodsRouter.get(
+  productsRouter.get(
     "/restaurant/:id/products/",
     isAuthenticated,
     getAllFoodsController
   );
-  foodsRouter.get(
+  productsRouter.get(
     "/restaurant/:id/products/",
     isAuthenticated,
     getFoodByIdController
   );
-  foodsRouter.patch(
+  productsRouter.patch(
     "/restaurant/:id/products/:id/update",
-    isAdmin,
+    hasRole("ADMIN"),
     isAuthenticated,
     updateFoodController
   );
-  foodsRouter.delete(
+  productsRouter.delete(
     "/restaurant/:id/products/:id/delete",
-    isAdmin,
+    hasRole("ADMIN"),
     isAuthenticated,
     deleteFoodController
   );

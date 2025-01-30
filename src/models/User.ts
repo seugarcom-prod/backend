@@ -45,7 +45,7 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["ADMIN", "MANAGER", "ATTENDANT", "CLIENT"],
+      enum: ["ADMIN", "ATTENDANT", "CLIENT"],
     },
   },
   { timestamps: true }
@@ -62,7 +62,9 @@ export const getUserById = (id: string) => UserModel.findById({ _id: id });
 export const getUserByEmail = (email: string) => UserModel.findOne({ email });
 // Get User by SessionToken for Middleware
 export const getUserBySessionToken = (sessionToken: string) =>
-  UserModel.findOne({ "authentication.sessionToken": sessionToken });
+  UserModel.findOne({ "authentication.sessionToken": sessionToken }).select(
+    "+authentication.sessionToken +role"
+  );
 // Create User
 export const createUser = (values: Record<string, any>) =>
   new UserModel(values).save().then((user) => user.toObject());
