@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
 import { createUser, getUserByEmail } from "../models/User";
 import { random, authentication } from "../helpers";
-import { cpf } from "cpf-cnpj-validator";
-import { emailRegex } from "../utils/regex";
 
 export const login = async (req: Request, res: Response) => {
   try {
