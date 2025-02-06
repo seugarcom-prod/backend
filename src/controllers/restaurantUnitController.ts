@@ -1,4 +1,4 @@
-import express from "express";
+import { Request, Response } from "express";
 import {
   createRestaurantUnit,
   deleteRestaurantUnit,
@@ -8,8 +8,8 @@ import {
 } from "../models/RestaurantUnit.ts";
 
 export const createRestaurantUnitController = async (
-  req: express.Request,
-  res: express.Response
+  req: Request,
+  res: Response
 ) => {
   const { id } = req.params;
 
@@ -35,8 +35,8 @@ export const createRestaurantUnitController = async (
 };
 
 export const getAllRestaurantUnitsController = async (
-  req: express.Request,
-  res: express.Response
+  req: Request,
+  res: Response
 ) => {
   try {
     const restaurantUnits = await getRestaurantUnit();
@@ -48,8 +48,8 @@ export const getAllRestaurantUnitsController = async (
 };
 
 export const getRestaurantUnitByIdController = async (
-  req: express.Request,
-  res: express.Response
+  req: Request,
+  res: Response
 ) => {
   try {
     const { id } = req.params;
@@ -67,8 +67,8 @@ export const getRestaurantUnitByIdController = async (
 };
 
 export const updateRestaurantUnitController = async (
-  req: express.Request,
-  res: express.Response
+  req: Request,
+  res: Response
 ) => {
   try {
     const { id } = req.params;
@@ -93,8 +93,8 @@ export const updateRestaurantUnitController = async (
 };
 
 export const deleteRestaurantUnitController = async (
-  req: express.Request,
-  res: express.Response
+  req: Request,
+  res: Response
 ) => {
   try {
     const { id } = req.params;

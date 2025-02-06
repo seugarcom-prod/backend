@@ -3,9 +3,9 @@ import mongoose from "mongoose";
 
 interface RevenueReport {
     daily: number;
-    weekly: number;
-    monthly: number;
-    yearly: number;
+    weekly?: number;
+    monthly?: number;
+    yearly?: number;
 }
 
 export const getRevenueReport = async (

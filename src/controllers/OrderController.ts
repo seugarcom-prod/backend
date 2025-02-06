@@ -102,7 +102,7 @@ export const getOrderByIdController = async (
   }
 };
 
-export const getRestaurantUnitOrdersHandler = async (req: Request, res: Response) => {
+export const getRestaurantUnitOrdersController = async (req: Request, res: Response) => {
   const { restaurantUnitId } = req.params;
 
   try {

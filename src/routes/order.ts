@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   createOrderHandler,
   deleteOrderController,
-  getRestaurantUnitOrdersHandler,
+  getRestaurantUnitOrdersController,
   getOrderByIdController,
   updateOrderController,
 } from "../controllers/OrderController.ts";
@@ -17,7 +17,7 @@ export default (orderRouter: Router) => {
   orderRouter.get(
     "/user/:id/request/list",
     isAuthenticated,
-    getRestaurantUnitOrdersHandler
+    getRestaurantUnitOrdersController
   );
   orderRouter.get(
     "/user/:id/request/:id",
