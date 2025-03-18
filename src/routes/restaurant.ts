@@ -9,23 +9,37 @@ import {
 import { isAuthenticated, hasRole } from "../middlewares/index.ts";
 
 export default (restaurantRouter: Router) => {
-  restaurantRouter.post("/restaurant/create", createRestaurantController);
-  restaurantRouter.get("/restaurant/list",
+  // Criar um novo restaurante
+  restaurantRouter.post(
+    "/restaurant",
     isAuthenticated,
     hasRole("ADMIN"),
+    createRestaurantController
+  );
+
+  // Obter todos os restaurantes
+  restaurantRouter.get(
+    "/restaurant",
     getAllRestaurantsController
   );
-  restaurantRouter.get("/restaurant/:id",
-    isAuthenticated,
-    hasRole("ADMIN"),
+
+  // Obter um restaurante específico por ID
+  restaurantRouter.get(
+    "/restaurant/:id",
     getRestaurantByIdController
   );
-  restaurantRouter.post("/restaurant/update/:id",
+
+  // Atualizar um restaurante
+  restaurantRouter.put(
+    "/restaurant/:id",
     isAuthenticated,
     hasRole("ADMIN"),
     updateRestaurantController
   );
-  restaurantRouter.delete("/restaurant/delete/:id",
+
+  // Excluir um restaurante
+  restaurantRouter.delete(
+    "/restaurant/:id",
     isAuthenticated,
     hasRole("ADMIN"),
     deleteRestaurantController

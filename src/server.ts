@@ -5,8 +5,8 @@ import dotenv from "dotenv";
 import swaggerJSDoc from "./swagger.json";
 import swaggerUI from "swagger-ui-express";
 import cookieParser from "cookie-parser";
-import router from "./routes/index.ts";
-import { connectToDb } from "./config/db.ts"; // Importa a função de conexão
+import router from "./routes/index.ts"; // Alterado para .js para NodeNext
+import { connectToDb } from "./config/db.ts"; // Alterado para .js para NodeNext
 
 // Configuração do dotenv
 dotenv.config({ path: ".env" });

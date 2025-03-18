@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { createUser, getUserByEmail } from "../models/User";
 import { random, authentication } from "../helpers";
 
+// LOGIN COMO USUÁRIO
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -26,7 +27,13 @@ export const login = async (req: Request, res: Response) => {
       return res.status(500).json({ message: "Erro na configuração do usuário." });
     }
 
-    // Gera um novo salt e cria um token de sessão
+    // CORREÇÃO: Verificar se a senha está correta
+    const expectedHash = authentication(user.authentication.salt, password);
+    if (expectedHash !== user.authentication.password) {
+      return res.status(403).json({ message: "Senha incorreta." });
+    }
+
+    // Gera um novo salt para o token de sessão (diferente do salt da senha)
     const salt = random();
     const sessionToken = authentication(salt, user._id.toString());
 
@@ -38,38 +45,57 @@ export const login = async (req: Request, res: Response) => {
     let redirectRoute = "";
     switch (user.role) {
       case "ADMIN":
-        redirectRoute = "/dashboard";
+        redirectRoute = "/admin";
         break;
       case "ATTENDANT":
         redirectRoute = "/unit";
         break;
       case "CLIENT":
-        redirectRoute = "/restaurant/order";
+        // redirectRoute = "/restaurant/order";
+        redirectRoute = "/admin";
         break;
       default:
-        redirectRoute = "/restaurant/order"; // Rota padrão para GUEST ou roles desconhecidas
+        // redirectRoute = "/restaurant/order";
+        redirectRoute = "/admin";
     }
 
-    // Retorna a rota de redirecionamento
-    return res.status(200).json({ redirectRoute });
+    // Retorna a rota de redirecionamento e o token de sessão
+    return res.status(200).json({
+      redirectRoute,
+      sessionToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      }
+    });
   } catch (error) {
     console.error("Erro no login:", error);
     return res.status(500).json({ message: "Erro interno no servidor." });
   }
 };
 
+// LOGIN COMO CONVIDADO
 export const guestLogin = async (req: Request, res: Response) => {
   try {
-    return res.status(200).json({ redirectRoute: "/restaurant/order" });
+    const sessionToken = authentication(random(), "GUEST");
+
+    return res.status(200).json({
+      redirectRoute: "/admin",
+      sessionToken,
+    });
   } catch (error) {
     console.error("Erro no login de convidado:", error);
     return res.status(500).json({ message: "Erro interno no servidor." });
   }
 };
 
+// CADASTRO DE USUÁRIO
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, firstName, lastName, phone, password } = req.body;
+    const { email, firstName, lastName, phone, password, role } = req.body;
 
     // Validação dos campos obrigatórios
     if (!email || !password || !firstName || !phone) {
@@ -89,6 +115,7 @@ export const register = async (req: Request, res: Response) => {
       lastName,
       email,
       phone,
+      role,
       authentication: {
         salt,
         password: authentication(salt, password),

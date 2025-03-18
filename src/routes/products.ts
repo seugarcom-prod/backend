@@ -6,7 +6,7 @@ import {
   getFoodByIdController,
   updateFoodController,
 } from "../controllers/ProductController.ts";
-import { hasRole, isAuthenticated } from "../middlewares/index.js";
+import { hasRole, isAuthenticated } from "../middlewares/index.ts";
 
 export default (productsRouter: Router) => {
   productsRouter.post(

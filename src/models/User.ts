@@ -8,6 +8,7 @@ export interface IUser extends Document {
   lastName: string;
   email: string;
   phone: string;
+  avatar?: string; // Campo avatar adicionado como opcional
   authentication: {
     password: string;
     salt: string;
@@ -35,6 +36,10 @@ const userSchema = new Schema(
       minLength: [11, "Please insert an valid phone number."],
       maxLength: [13, "Please insert an valid phone number."],
     },
+    avatar: {
+      type: String,
+      default: null
+    },
     authentication: {
       password: {
         type: String,
@@ -46,6 +51,7 @@ const userSchema = new Schema(
     role: {
       type: String,
       enum: ["ADMIN", "ATTENDANT", "CLIENT"],
+      default: 'CLIENT',
     },
   },
   { timestamps: true }
@@ -54,23 +60,40 @@ const userSchema = new Schema(
 export const UserModel = mongoose.model("User", userSchema);
 
 // METHODS
+
 // Get All Users
 export const getUsers = () => UserModel.find();
+
 // Get User by Id
-export const getUserById = (id: string) => UserModel.findById({ _id: id });
+export const getUserById = (id: string) => UserModel.findById(id);
+
 // Get User by Email for Register Validation
-export const getUserByEmail = (email: string) => UserModel.findOne({ email });
+export const getUserByEmail = (email: string) => {
+  return UserModel.findOne({ email });
+};
+
 // Get User by SessionToken for Middleware
-export const getUserBySessionToken = (sessionToken: string) =>
-  UserModel.findOne({ "authentication.sessionToken": sessionToken }).select(
-    "+authentication.sessionToken +role"
-  );
+export const getUserBySessionToken = (sessionToken: string) => {
+  return UserModel.findOne({
+    'authentication.sessionToken': sessionToken,
+  });
+};
+
+// Get User by Restaurant Unit
+export const getUserByUnit = (unit: string) => {
+  UserModel
+    .find({ unit })
+    .select("+authentication.sessionToken +role").find(getUsers);
+}
+
 // Create User
 export const createUser = (values: Record<string, any>) =>
   new UserModel(values).save().then((user) => user.toObject());
+
 // Delete User
 export const deleteUser = (id: string) =>
   UserModel.findByIdAndDelete({ _id: id });
+
 // Update User
 export const updateUser = (id: string, values: Record<string, any>) =>
   UserModel.findByIdAndUpdate(id, values);

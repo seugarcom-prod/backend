@@ -1,58 +1,81 @@
-import { Request, Response, NextFunction, Router } from "express";
-import { body, validationResult } from "express-validator";
+import { Router } from "express";
 import {
   createRestaurantUnitController,
   deleteRestaurantUnitController,
   getAllRestaurantUnitsController,
   getRestaurantUnitByIdController,
   updateRestaurantUnitController,
+  addAttendantToUnitController,
+  removeAttendantFromUnitController
 } from "../controllers/restaurantUnitController.ts";
 import { hasRole, isAuthenticated } from "../middlewares/index.ts";
 import { getRestaurantUnitOrdersController } from "../controllers/OrderController.ts";
 
 export default (restaurantUnitRouter: Router) => {
-  // Cria uma nova unidade de restaurante
+  // Criar uma nova unidade para um restaurante
   restaurantUnitRouter.post(
-    "/restaurants",
+    "/restaurant/:restaurantId/unit",
     isAuthenticated,
     hasRole("ADMIN"),
     createRestaurantUnitController
   );
 
-  // Lista todas as unidades de restaurante
-  restaurantUnitRouter.get("/restaurants",
+  // Obter todas as unidades de um restaurante
+  restaurantUnitRouter.get(
+    "/restaurant/:restaurantId/unit",
+    getAllRestaurantUnitsController
+  );
+
+  // Obter todas as unidades (independente do restaurante)
+  restaurantUnitRouter.get(
+    "/unit",
     isAuthenticated,
     hasRole("ADMIN"),
     getAllRestaurantUnitsController
   );
 
-  // Recebe os pedidos da unidade de restaurante
-  restaurantUnitRouter.get("/restaurants/:id/orders",
-    isAuthenticated,
-    getRestaurantUnitOrdersController
-  );
-
-  // Obtém uma unidade de restaurante por ID
-  restaurantUnitRouter.get("/restaurants/:id",
-    isAuthenticated,
-    hasRole("ADMIN"),
+  // Obter uma unidade específica por ID
+  restaurantUnitRouter.get(
+    "/unit/:unitId",
     getRestaurantUnitByIdController
   );
 
-  // Atualiza uma unidade de restaurante
+  // Atualizar uma unidade
   restaurantUnitRouter.put(
-    "/restaurants/:id",
+    "/unit/:unitId",
     isAuthenticated,
     hasRole("ADMIN"),
     updateRestaurantUnitController
   );
 
-  // Exclui uma unidade de restaurante
+  // Excluir uma unidade
   restaurantUnitRouter.delete(
-    "/restaurants/:id",
+    "/unit/:unitId/restaurant/:restaurantId",
     isAuthenticated,
     hasRole("ADMIN"),
     deleteRestaurantUnitController
   );
 
+  // Obter pedidos de uma unidade
+  restaurantUnitRouter.get(
+    "/unit/:unitId/order",
+    isAuthenticated,
+    getRestaurantUnitOrdersController
+  );
+
+  // Adicionar atendente a uma unidade
+  restaurantUnitRouter.post(
+    "/unit/:unitId/attendant",
+    isAuthenticated,
+    hasRole("ADMIN"),
+    addAttendantToUnitController
+  );
+
+  // Remover atendente de uma unidade
+  restaurantUnitRouter.delete(
+    "/unit/:unitId/attendant/:attendantId",
+    isAuthenticated,
+    hasRole("ADMIN"),
+    removeAttendantFromUnitController
+  );
 };

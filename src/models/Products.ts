@@ -3,6 +3,7 @@ import { IRestaurant } from "./index"; // Certifique-se de que IRestaurant está
 
 export interface IProduct extends Document {
   restaurant: mongoose.Schema.Types.ObjectId | IRestaurant;
+  category: string;
   image: string;
   name: string;
   quantity: number;
@@ -16,6 +17,9 @@ const productSchema = new Schema<IProduct>({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Restaurant",
     required: true,
+  },
+  category: {
+    type: String,
   },
   image: {
     type: String,

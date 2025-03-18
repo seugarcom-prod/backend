@@ -17,25 +17,33 @@ export const createRestaurantController = async (
   const existingRestaurant = await getRestaurantById(id);
   if (existingRestaurant) return res.sendStatus(400);
 
-  const { name, cnpj, address, logo, units } = req.body;
+  const { name, cnpj, address, logo, specialty, phone, socialName, rating, admin, units, attendants } = req.body;
 
   const sameName = await getRestaurantByName(name);
   if (sameName) return res.sendStatus(400);
 
-  if (!name || !cnpj || !address || !logo || !units) return res.sendStatus(400);
+  if (!name || !cnpj || !address || !logo || !specialty || !phone)
+    return res.status(400).json({ message: "Campos obrigatórios não fornecidos" });
 
   try {
     const restaurant = await createRestaurant({
-      address,
-      cnpj,
       name,
       logo,
-      units,
+      cnpj,
+      socialName,
+      address,
+      rating,
+      specialty,
+      phone,
+      admin,
+      units: units || [],
+      attendants: attendants || []
     });
 
     res.status(201).json(restaurant).end();
   } catch (error) {
     console.log("Erro: ", error);
+    res.status(500).json({ message: "Erro ao criar restaurante", error });
   }
 };
 
@@ -45,10 +53,10 @@ export const getAllRestaurantsController = async (
 ) => {
   try {
     const restaurants = await getRestaurants();
-
     return res.status(200).json(restaurants);
   } catch (error) {
-    return res.sendStatus(400);
+    console.error("Erro ao buscar restaurantes:", error);
+    return res.status(500).json({ message: "Erro ao buscar restaurantes", error });
   }
 };
 
@@ -61,13 +69,13 @@ export const getRestaurantByIdController = async (
     const restaurant = await getRestaurantById(id);
 
     if (!restaurant) {
-      return res.status(404).json({ message: "Restaurant not found" });
+      return res.status(404).json({ message: "Restaurante não encontrado" });
     }
 
     res.json(restaurant);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "Something went wrong" });
+    return res.status(500).json({ message: "Erro ao buscar restaurante", error });
   }
 };
 
@@ -77,24 +85,36 @@ export const updateRestaurantController = async (
 ) => {
   try {
     const { id } = req.params;
-    const { address, cnpj, name, logo, units } = req.body;
+    const { name, cnpj, address, logo, specialty, phone, socialName, rating, admin, units, attendants } = req.body;
 
-    const restaurant = await getRestaurantById(id);
-
-    if (restaurant) {
-      restaurant.name = name;
-      restaurant.address = address;
-      restaurant.cnpj = cnpj;
-      restaurant.logo = logo;
-      restaurant.units[0] = [units];
-
-      await updateRestaurant(id, restaurant);
+    // Verificar se o restaurante existe
+    const existingRestaurant = await getRestaurantById(id);
+    if (!existingRestaurant) {
+      return res.status(404).json({ message: "Restaurante não encontrado" });
     }
 
-    return res.status(200).json(restaurant);
+    // Criar objeto com valores a serem atualizados
+    const updateValues: Record<string, any> = {};
+
+    if (name) updateValues.name = name;
+    if (logo) updateValues.logo = logo;
+    if (cnpj) updateValues.cnpj = cnpj;
+    if (socialName) updateValues.socialName = socialName;
+    if (address) updateValues.address = address;
+    if (rating !== undefined) updateValues.rating = rating;
+    if (specialty) updateValues.specialty = specialty;
+    if (phone) updateValues.phone = phone;
+    if (admin) updateValues.admin = admin;
+    if (units) updateValues.units = units;
+    if (attendants) updateValues.attendants = attendants;
+
+    // Aplicar a atualização
+    const updatedRestaurant = await updateRestaurant(id, updateValues);
+
+    return res.status(200).json(updatedRestaurant || { message: "Restaurante atualizado com sucesso" });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "Something went wrong" });
+    return res.status(500).json({ message: "Erro ao atualizar restaurante", error });
   }
 };
 
@@ -105,11 +125,16 @@ export const deleteRestaurantController = async (
   try {
     const { id } = req.params;
 
+    const existingRestaurant = await getRestaurantById(id);
+    if (!existingRestaurant) {
+      return res.status(404).json({ message: "Restaurante não encontrado" });
+    }
+
     const deletedRestaurant = await deleteRestaurant(id);
 
-    return res.json(deleteRestaurant);
+    return res.status(200).json({ message: "Restaurante excluído com sucesso", deletedRestaurant });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "Something went wrong" });
+    return res.status(500).json({ message: "Erro ao excluir restaurante", error });
   }
 };

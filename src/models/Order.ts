@@ -15,6 +15,7 @@ export interface IOrder extends Document {
   totalAmount: number;
   discountTicket?: string;
   status: string;
+  createdAt: Date;
   paidAt?: Date;
 }
 
@@ -66,6 +67,9 @@ const orderSchema = new Schema<IOrder>(
       type: String,
       enum: ["Aguardando aprovação", "Produzindo", "Pronto", "Entregue", "Cancelado"],
       default: "Aguardando aprovação",
+    },
+    createdAt: {
+      type: Date,
     },
     paidAt: {
       type: Date,
