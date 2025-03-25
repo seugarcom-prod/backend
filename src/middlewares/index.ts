@@ -1,2 +1,2 @@
 export * from './hasRole';
-export * from './isAuthenticated';
+export * from './auth';

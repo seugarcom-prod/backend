@@ -5,6 +5,7 @@ import {
   getRestaurantById,
   getRestaurantByName,
   getRestaurants,
+  RestaurantModel,
   updateRestaurant,
 } from "../models/Restaurant.ts";
 
@@ -12,20 +13,21 @@ export const createRestaurantController = async (
   req: express.Request,
   res: express.Response
 ) => {
-  const { id } = req.params;
-
-  const existingRestaurant = await getRestaurantById(id);
-  if (existingRestaurant) return res.sendStatus(400);
-
   const { name, cnpj, address, logo, specialty, phone, socialName, rating, admin, units, attendants } = req.body;
 
-  const sameName = await getRestaurantByName(name);
-  if (sameName) return res.sendStatus(400);
 
-  if (!name || !cnpj || !address || !logo || !specialty || !phone)
+  // Validação dos campos obrigatórios
+  if (!name || !cnpj || !address || !logo || !phone)
     return res.status(400).json({ message: "Campos obrigatórios não fornecidos" });
 
   try {
+    // Verificação de unicidade apenas pelo CNPJ
+    const existingRestaurant = await RestaurantModel.findOne({ cnpj });
+    if (existingRestaurant) {
+      return res.status(400).json({ message: "Já existe um restaurante cadastrado com este CNPJ" });
+    }
+
+    // Criação do restaurante
     const restaurant = await createRestaurant({
       name,
       logo,
@@ -76,6 +78,30 @@ export const getRestaurantByIdController = async (
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Erro ao buscar restaurante", error });
+  }
+};
+
+// No controlador
+export const getRestaurantBySlugController = async (req: express.Request, res: express.Response) => {
+  try {
+    const { slug } = req.params;
+
+    // Converter slug para nome (substituindo traços por espaços)
+    const name = slug.replace(/-/g, ' ');
+
+    // Buscar por nome (case insensitive)
+    const restaurant = await RestaurantModel.findOne({
+      name: { $regex: new RegExp('^' + name + '$', 'i') }
+    });
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurante não encontrado" });
+    }
+
+    res.json(restaurant);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao buscar restaurante" });
   }
 };
 

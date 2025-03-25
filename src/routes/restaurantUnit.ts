@@ -10,13 +10,14 @@ import {
 } from "../controllers/restaurantUnitController.ts";
 import { hasRole, isAuthenticated } from "../middlewares/index.ts";
 import { getRestaurantUnitOrdersController } from "../controllers/OrderController.ts";
+import { isAdmin } from "../middlewares/auth.ts";
 
 export default (restaurantUnitRouter: Router) => {
   // Criar uma nova unidade para um restaurante
   restaurantUnitRouter.post(
     "/restaurant/:restaurantId/unit",
-    isAuthenticated,
-    hasRole("ADMIN"),
+    // isAuthenticated,
+    // isAdmin, // Em vez de hasRole("ADMIN")
     createRestaurantUnitController
   );
 

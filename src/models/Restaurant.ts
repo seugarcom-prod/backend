@@ -29,10 +29,10 @@ const restaurantSchema = new Schema(
     name: {
       type: String,
       required: true,
+      set: (v: string) => v.toLowerCase()
     },
     logo: {
       type: String,
-      required: true,
     },
     cnpj: {
       type: String,
@@ -63,7 +63,6 @@ const restaurantSchema = new Schema(
     },
     specialty: {
       type: String,
-      required: true
     },
     phone: {
       type: String,
@@ -120,3 +119,10 @@ export const deleteRestaurant = (id: string) =>
 // Update Restaurant
 export const updateRestaurant = (id: string, values: Record<string, any>) =>
   RestaurantModel.findByIdAndUpdate(id, values);
+
+export const getRestaurantBySlug = (slug: string) => {
+  const name = slug.replace(/-/g, ' ');
+  return RestaurantModel.findOne({
+    name: { $regex: new RegExp(`^${name}$`, 'i') }
+  });
+};

@@ -1,117 +1,160 @@
-import mongoose, { Document, Schema } from "mongoose";
-import { IRestaurant, IUser } from "./index"; // Certifique-se de que IRestaurant e IUser estão corretamente definidos
-import { ProductModel } from "./Products";
+import mongoose from "mongoose";
+const Schema = mongoose.Schema;
 
-export interface IOrder extends Document {
-  restaurant: mongoose.Schema.Types.ObjectId | IRestaurant;
-  user: mongoose.Schema.Types.ObjectId | IUser;
-  items: Array<{
-    product: mongoose.Schema.Types.ObjectId;
-    quantity: number;
-    price: number;
-  }>;
-  table: number;
-  isPaid: boolean;
-  totalAmount: number;
-  discountTicket?: string;
-  status: string;
-  createdAt: Date;
-  paidAt?: Date;
+// Interfaces
+export interface IOrderMetadata {
+  tableNumber?: number;
+  orderType?: 'local' | 'takeaway';
+  observations?: string;
+  paymentMethod?: string;
+  paymentRequestedAt?: Date;
+  processedBy?: mongoose.Schema.Types.ObjectId;
+  splitCount?: number; // Novo campo para divisão de conta
 }
 
-const orderSchema = new Schema<IOrder>(
+export interface IOrder extends mongoose.Document {
+  user?: mongoose.Schema.Types.ObjectId;
+  isGuest: boolean;
+  guestInfo?: {
+    name: string;
+    email?: string;
+    phone?: string;
+  };
+  restaurantUnit: mongoose.Schema.Types.ObjectId;
+  items: Array<{
+    name: string;
+    price: number;
+    quantity: number;
+  }>;
+  totalAmount: number;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled' | 'payment_requested';
+  isPaid: boolean;
+  paidAt?: Date;
+  metadata?: IOrderMetadata;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Schema sem validações complexas
+const orderSchema = new Schema(
   {
-    restaurant: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Restaurant",
-      required: true,
-    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: false
+    },
+    isGuest: {
+      type: Boolean,
+      default: false
+    },
+    guestInfo: {
+      name: String,
+      email: String,
+      phone: String
+    },
+    restaurantUnit: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RestaurantUnit",
+      required: true
     },
     items: [
       {
-        product: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
-          required: true,
-        },
-        quantity: {
-          type: Number,
-          required: true,
-        },
-        price: {
-          type: Number,
-          required: true,
-        },
-      },
+        name: { type: String, required: true },
+        price: { type: Number, required: true },
+        quantity: { type: Number, required: true, default: 1 }
+      }
     ],
-    table: {
-      type: Number,
-      required: true,
-    },
-    isPaid: {
-      type: Boolean,
-      default: false,
-    },
     totalAmount: {
       type: Number,
-      required: true,
-    },
-    discountTicket: {
-      type: String,
+      required: true
     },
     status: {
       type: String,
-      enum: ["Aguardando aprovação", "Produzindo", "Pronto", "Entregue", "Cancelado"],
-      default: "Aguardando aprovação",
+      enum: ["pending", "processing", "completed", "cancelled", "payment_requested"],
+      default: "pending"
     },
-    createdAt: {
-      type: Date,
+    isPaid: {
+      type: Boolean,
+      default: false
     },
     paidAt: {
-      type: Date,
+      type: Date
     },
+    metadata: {
+      tableNumber: Number,
+      orderType: {
+        type: String,
+        enum: ['local', 'takeaway'],
+        default: 'local'
+      },
+      observations: String,
+      paymentMethod: String,
+      paymentRequestedAt: Date,
+      processedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      },
+      splitCount: {
+        type: Number,
+        default: 1,
+        min: 1
+      }
+    }
   },
   { timestamps: true }
 );
 
+// Validação manual para guestInfo.name
+orderSchema.pre('validate', function (next) {
+  // @ts-ignore - Ignorando problemas de tipagem com 'this'
+  if (this.isGuest === true && (!this.guestInfo || !this.guestInfo.name)) {
+    // @ts-ignore
+    this.invalidate('guestInfo.name', 'O nome é obrigatório para pedidos de convidados');
+  }
+  next();
+});
+
 export const OrderModel = mongoose.model<IOrder>("Order", orderSchema);
 
-// Métodos
-
-// Obter todos os pedidos
-export const getOrders = () => OrderModel.find().populate("items.product");
-
-// Obter pedido por ID
-export const getOrderById = (id: string) => OrderModel.findById(id).populate("items.product");
-
-// Criar pedido
-export const createOrder = async (values: Record<string, any>) => {
-  // Calcular o totalAmount com base nos itens do pedido
-  const items = values.items;
-  let totalAmount = 0;
-
-  for (const item of items) {
-    const product = await ProductModel.findById(item.product);
-    if (!product || !product.isAvailable) {
-      throw new Error(`Produto ${item.product} indisponível ou inválido`);
-    }
-    totalAmount += product.price * item.quantity;
-    item.price = product.price; // Atualizar o preço no item do pedido
+// Função de validação para usar antes de salvar o pedido
+export const validateOrder = (orderData: any): string | null => {
+  if (orderData.isGuest && (!orderData.guestInfo || !orderData.guestInfo.name)) {
+    return "O nome é obrigatório para pedidos de convidados";
   }
-
-  values.totalAmount = totalAmount;
-
-  const order = new OrderModel(values);
-  return order.save().then((order) => order.toObject());
+  if (orderData.metadata?.splitCount && (isNaN(orderData.metadata.splitCount) || orderData.metadata.splitCount < 1)) {
+    return "O número de pessoas para divisão da conta deve ser pelo menos 1";
+  }
+  return null;
 };
 
-// Deletar pedido
-export const deleteOrder = (id: string) => OrderModel.findOneAndDelete({ _id: id });
+// METHODS
 
-// Atualizar pedido
+// Get all orders
+export const getOrders = () => OrderModel.find();
+
+// Get order by id
+export const getOrderById = (id: string) => OrderModel.findById(id);
+
+// Update order
 export const updateOrder = (id: string, values: Record<string, any>) =>
-  OrderModel.findByIdAndUpdate(id, values, { new: true }).populate("items.product");
+  OrderModel.findByIdAndUpdate(id, values, { new: true });
+
+// Delete order
+export const deleteOrder = (id: string) =>
+  OrderModel.findByIdAndDelete(id);
+
+// Get orders by table number
+export const getOrdersByTable = (restaurantUnitId: string, tableNumber: number) =>
+  OrderModel.find({
+    restaurantUnit: restaurantUnitId,
+    'metadata.tableNumber': tableNumber
+  });
+
+// Get unpaid orders by table
+export const getUnpaidOrdersByTable = (restaurantUnitId: string, tableNumber: number) =>
+  OrderModel.find({
+    restaurantUnit: restaurantUnitId,
+    'metadata.tableNumber': tableNumber,
+    isPaid: false,
+    status: { $nin: ['cancelled'] }
+  });

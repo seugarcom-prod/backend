@@ -1,7 +1,6 @@
 // services/dashboardService.ts
 import mongoose from "mongoose";
 import { OrderModel } from "../models/Order";
-import { ProductModel } from "../models/Products";
 import { RestaurantUnitModel } from "../models/RestaurantUnit";
 
 /**
@@ -14,6 +13,11 @@ export interface RevenueReport {
         period: string;
         value: number;
     }[];
+    guestVsUserRevenue: {
+        guests: number;
+        users: number;
+        guestPercentage: number;
+    };
 }
 
 /**
@@ -32,6 +36,11 @@ export interface OrdersReport {
         status: string;
         count: number;
     }[];
+    guestVsUserOrders: {
+        guests: number;
+        users: number;
+        guestPercentage: number;
+    };
 }
 
 /**
@@ -94,10 +103,10 @@ export const getRevenueReport = async (unitId: string): Promise<RevenueReport> =
 
     // Obtém todos os pedidos pagos da unidade nos últimos 6 meses
     const orders = await OrderModel.find({
-        'restaurant': unitId,
+        'restaurantUnit': unitId,
         'isPaid': true,
         'createdAt': { $gte: sixMonthsAgo },
-        'status': { $ne: 'Cancelado' }
+        'status': { $ne: 'cancelled' } // alterado para minúsculo conforme nosso enum
     }).sort({ createdAt: 1 });
 
     // Calcula o faturamento total
@@ -124,7 +133,6 @@ export const getRevenueReport = async (unitId: string): Promise<RevenueReport> =
 
     orders.forEach(order => {
         const date = new Date(order.createdAt);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const month = getMonthName(date.getMonth());
 
         if (!monthlyRevenue.has(month)) {
@@ -140,10 +148,24 @@ export const getRevenueReport = async (unitId: string): Promise<RevenueReport> =
         value: Math.round(value * 100) / 100 // Arredonda para 2 casas decimais
     }));
 
+    // Calcula receita de pedidos de convidados vs usuários registrados
+    const guestOrders = orders.filter(order => order.isGuest);
+    const userOrders = orders.filter(order => !order.isGuest);
+
+    const guestRevenue = guestOrders.reduce((total, order) => total + order.totalAmount, 0);
+    const userRevenue = userOrders.reduce((total, order) => total + order.totalAmount, 0);
+
+    const guestPercentage = totalRevenue > 0 ? (guestRevenue / totalRevenue) * 100 : 0;
+
     return {
         totalRevenue,
         comparisonWithLastPeriod: Math.round(comparisonWithLastPeriod * 100) / 100,
-        periodRevenue
+        periodRevenue,
+        guestVsUserRevenue: {
+            guests: Math.round(guestRevenue * 100) / 100,
+            users: Math.round(userRevenue * 100) / 100,
+            guestPercentage: Math.round(guestPercentage * 100) / 100
+        }
     };
 };
 
@@ -167,7 +189,7 @@ export const getOrdersReport = async (unitId: string): Promise<OrdersReport> => 
 
     // Obtém todos os pedidos da unidade nos últimos 6 meses
     const orders = await OrderModel.find({
-        'restaurant': unitId,
+        'restaurantUnit': unitId,
         'createdAt': { $gte: sixMonthsAgo }
     }).sort({ createdAt: 1 });
 
@@ -181,12 +203,12 @@ export const getOrdersReport = async (unitId: string): Promise<OrdersReport> => 
 
     // Pedidos cancelados
     const cancelados = orders.filter(order =>
-        order.status === 'Cancelado'
+        order.status === 'cancelled'
     ).length;
 
     // Pedidos em produção
     const emProducao = orders.filter(order =>
-        order.status === 'Produzindo'
+        order.status === 'processing'
     ).length;
 
     // Agrupa por mês para o gráfico
@@ -225,13 +247,23 @@ export const getOrdersReport = async (unitId: string): Promise<OrdersReport> => 
         count
     }));
 
+    // Contar pedidos de convidados vs usuários registrados
+    const guestOrders = orders.filter(order => order.isGuest).length;
+    const userOrders = orders.filter(order => !order.isGuest).length;
+    const guestPercentage = totalOrders > 0 ? (guestOrders / totalOrders) * 100 : 0;
+
     return {
         totalOrders,
         realizadosHoje,
         cancelados,
         emProducao,
         monthlyOrdersCount,
-        ordersByStatus
+        ordersByStatus,
+        guestVsUserOrders: {
+            guests: guestOrders,
+            users: userOrders,
+            guestPercentage: Math.round(guestPercentage * 100) / 100
+        }
     };
 };
 
@@ -246,27 +278,25 @@ export const getTopProducts = async (unitId: string, limit: number = 5) => {
 
     // Obtém todos os pedidos da unidade que não foram cancelados
     const orders = await OrderModel.find({
-        'restaurant': unitId,
-        'status': { $ne: 'Cancelado' }
-    }).populate('items.product');
+        'restaurantUnit': unitId,
+        'status': { $ne: 'cancelled' }
+    });
 
-    // Conta a quantidade de cada produto
+    // Conta a quantidade de cada produto usando o nome como identificador
     const productCount = new Map<string, { count: number, name: string, revenue: number }>();
 
     orders.forEach(order => {
         order.items.forEach(item => {
-            const productId = item.product.toString();
-
-            if (!productCount.has(productId)) {
-                productCount.set(productId, {
+            if (!productCount.has(item.name)) {
+                productCount.set(item.name, {
                     count: 0,
-                    name: '', // Será preenchido depois
+                    name: item.name,
                     revenue: 0
                 });
             }
 
-            const current = productCount.get(productId)!;
-            productCount.set(productId, {
+            const current = productCount.get(item.name)!;
+            productCount.set(item.name, {
                 ...current,
                 count: current.count + item.quantity,
                 revenue: current.revenue + (item.price * item.quantity)
@@ -274,27 +304,12 @@ export const getTopProducts = async (unitId: string, limit: number = 5) => {
         });
     });
 
-    // Obtém os detalhes dos produtos para adicionar os nomes
-    const productIds = Array.from(productCount.keys());
-    const products = await ProductModel.find({ _id: { $in: productIds } });
-
-    products.forEach(product => {
-        const productData = productCount.get(product._id.toString());
-        if (productData) {
-            productCount.set(product._id.toString(), {
-                ...productData,
-                name: product.name
-            });
-        }
-    });
-
     // Ordena por quantidade vendida e pega os top N
     const topProducts = Array.from(productCount.entries())
-        .map(([id, data]) => ({
-            id,
-            name: data.name,
+        .map(([name, data]) => ({
+            name,
             count: data.count,
-            revenue: data.revenue
+            revenue: Math.round(data.revenue * 100) / 100
         }))
         .sort((a, b) => b.count - a.count)
         .slice(0, limit);
@@ -313,10 +328,10 @@ export const getDailyRevenueReport = async (unitId: string, startDate: Date, end
 
     // Obtém todos os pedidos pagos da unidade no período
     const orders = await OrderModel.find({
-        'restaurant': unitId,
+        'restaurantUnit': unitId,
         'isPaid': true,
         'createdAt': { $gte: startDate, $lte: endDate },
-        'status': { $ne: 'Cancelado' }
+        'status': { $ne: 'cancelled' }
     }).sort({ createdAt: 1 });
 
     // Agrupa por dia

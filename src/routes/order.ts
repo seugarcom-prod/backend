@@ -5,32 +5,55 @@ import {
   getRestaurantUnitOrdersController,
   getOrderByIdController,
   updateOrderController,
-} from "../controllers/OrderController.ts";
-import { isAuthenticated } from "../middlewares/index.ts";
+  requestTableCheckoutHandler,
+  getTableOrdersController,
+  processTablePaymentHandler
+} from "../controllers/OrderController";
+import { isAuthenticated, hasRole } from "../middlewares/index";
 
 export default (orderRouter: Router) => {
-  orderRouter.post(
-    "/user/:id/:restaurantId/request",
+  // Rota para criação de pedidos (aberta para convidados)
+  orderRouter.post("/order/create", createOrderHandler);
+
+  // Rota para usuários autenticados criarem pedidos
+  orderRouter.post("/user/:id/order/create",
     isAuthenticated,
-    createOrderHandler
-  );
+    createOrderHandler);
+
+  // Rota para solicitar fechamento de conta (aberta para convidados)
+  orderRouter.post("/order/request-checkout", requestTableCheckoutHandler);
+
+  // Rota para processar pagamento (requer autenticação de staff)
+  orderRouter.post("/order/process-payment", isAuthenticated, hasRole('MANAGER'), processTablePaymentHandler);
+
+  // Listar pedidos de uma unidade (requer autenticação)
   orderRouter.get(
-    "/user/:id/request/list",
+    "/unit/:restaurantUnitId/orders",
     isAuthenticated,
     getRestaurantUnitOrdersController
   );
+
+  // Listar pedidos de uma mesa específica
   orderRouter.get(
-    "/user/:id/request/:id",
-    isAuthenticated,
-    getOrderByIdController
+    "/unit/:restaurantUnitId/table/:tableNumber/orders",
+    getTableOrdersController
   );
+
+  // Visualizar um pedido específico
+  // Não requer autenticação, mas seria bom adicionar alguma validação
+  // como um token temporário para convidados
+  orderRouter.get("/order/:id", getOrderByIdController);
+
+  // Atualizar pedido (requer autenticação)
   orderRouter.patch(
-    "/user/:id/request/:id/update",
+    "/order/:id/update",
     isAuthenticated,
     updateOrderController
   );
+
+  // Excluir pedido (requer autenticação)
   orderRouter.delete(
-    "/user/:id/request/:id/delete",
+    "/order/:id/delete",
     isAuthenticated,
     deleteOrderController
   );

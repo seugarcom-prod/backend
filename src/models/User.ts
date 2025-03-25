@@ -15,10 +15,16 @@ export interface IUser extends Document {
     sessionToken: string;
   };
   role: "ADMIN" | "MANAGER" | "ATTENDANT" | "CLIENT";
+  orders: mongoose.Schema.Types.ObjectId[];
 }
 
 const userSchema = new Schema(
   {
+    id: {
+      type: String,
+      default: () => new mongoose.Types.ObjectId().toString(),
+      unique: true
+    },
     firstName: {
       type: String,
       trim: true,
@@ -53,6 +59,12 @@ const userSchema = new Schema(
       enum: ["ADMIN", "ATTENDANT", "CLIENT"],
       default: 'CLIENT',
     },
+    orders: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Order"
+      }
+    ]
   },
   { timestamps: true }
 );

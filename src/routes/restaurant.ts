@@ -4,6 +4,7 @@ import {
   deleteRestaurantController,
   getAllRestaurantsController,
   getRestaurantByIdController,
+  getRestaurantBySlugController,
   updateRestaurantController,
 } from "../controllers/RestaurantController.ts";
 import { isAuthenticated, hasRole } from "../middlewares/index.ts";
@@ -12,8 +13,6 @@ export default (restaurantRouter: Router) => {
   // Criar um novo restaurante
   restaurantRouter.post(
     "/restaurant",
-    isAuthenticated,
-    hasRole("ADMIN"),
     createRestaurantController
   );
 
@@ -29,19 +28,21 @@ export default (restaurantRouter: Router) => {
     getRestaurantByIdController
   );
 
+  restaurantRouter.get('/restaurant/by-slug/:slug', getRestaurantBySlugController);
+
   // Atualizar um restaurante
   restaurantRouter.put(
     "/restaurant/:id",
-    isAuthenticated,
-    hasRole("ADMIN"),
+    // isAuthenticated,
+    // hasRole("ADMIN"),
     updateRestaurantController
   );
 
   // Excluir um restaurante
   restaurantRouter.delete(
     "/restaurant/:id",
-    isAuthenticated,
-    hasRole("ADMIN"),
+    // isAuthenticated,
+    // hasRole("ADMIN"),
     deleteRestaurantController
   );
 };

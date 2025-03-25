@@ -17,12 +17,12 @@ export const createFoodController = async (
   const existingFood = await getProductById(id);
   if (existingFood) return res.sendStatus(400);
 
-  const { name, restaurant, category, description, price, image } = req.body;
+  const { name, restaurant, category, description, price, image, quantity } = req.body;
 
   const sameName = await getProductByName(name);
   if (sameName) return res.sendStatus(400);
 
-  if (!name || !restaurant || !category || !price || !description || !image)
+  if (!name || !restaurant || !category || !price || !description || !image || !quantity)
     return res.sendStatus(400);
 
   try {
@@ -32,12 +32,51 @@ export const createFoodController = async (
       name,
       price,
       description,
-      image
+      image,
+      quantity
     });
 
     res.status(201).json(newFood).end();
   } catch (error) {
     console.log("Erro: ", error);
+  }
+};
+
+export const createMultipleProductsController = async (
+  req: express.Request,
+  res: express.Response
+) => {
+  try {
+    const { products } = req.body;
+    const restaurantId = req.params.id;
+
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ message: "Lista de produtos inválida" });
+    }
+
+    const createdProducts = [];
+
+    for (const product of products) {
+      // Adicionar restaurantId a cada produto
+      product.restaurant = restaurantId;
+
+      // Validar campos obrigatórios
+      if (!product.name || !product.price || !product.quantity) {
+        return res.status(400).json({
+          message: "Campos obrigatórios ausentes",
+          product
+        });
+      }
+
+      // Criar produto
+      const newProduct = await createProduct(product);
+      createdProducts.push(newProduct);
+    }
+
+    return res.status(201).json(createdProducts);
+  } catch (error) {
+    console.error("Erro ao criar produtos:", error);
+    return res.status(500).json({ message: "Erro ao criar produtos" });
   }
 };
 
@@ -82,12 +121,12 @@ export const updateFoodController = async (
     const food = await getProductById(id);
 
     if (food) {
-      food[0].name = name;
-      food[0].category = category;
-      food[0].price = price;
-      food[0].description = description;
-      food[0].image = image;
-      food[0].isAvailable = isAvailable;
+      food.name = name;
+      food.category = category;
+      food.price = price;
+      food.description = description;
+      food.image = image;
+      food.isAvailable = isAvailable;
 
       await updateProduct(id, food);
     }

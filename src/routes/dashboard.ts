@@ -5,7 +5,8 @@ import {
     getRevenueReportController,
     getOrdersReportController,
     getTopProductsController,
-    getDailyRevenueReportController
+    getDailyRevenueReportController,
+    getGuestVsUserStatsController
 } from "../controllers/DashboardController";
 import { isAuthenticated } from "../middlewares/index"; // Assumindo que você tem um middleware de autenticação
 
@@ -28,5 +29,8 @@ router.get('/top-products/:unitId', getTopProductsController);
 
 // Rota para obter relatório de faturamento diário
 router.get('/daily-revenue/:unitId', getDailyRevenueReportController);
+
+// Nova rota para estatísticas de convidados vs usuários registrados
+router.get('/guest-vs-user/:unitId', getGuestVsUserStatsController);
 
 export default router;

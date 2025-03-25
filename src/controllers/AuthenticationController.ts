@@ -95,10 +95,10 @@ export const guestLogin = async (req: Request, res: Response) => {
 // CADASTRO DE USUÁRIO
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, firstName, lastName, phone, password, role } = req.body;
+    const { email, firstName, lastName, phone, cpf, password, role } = req.body;
 
     // Validação dos campos obrigatórios
-    if (!email || !password || !firstName || !phone) {
+    if (!email || !password || !firstName || !phone || !cpf) {
       return res.status(400).json({ message: "Todos os campos são obrigatórios." });
     }
 
@@ -115,6 +115,7 @@ export const register = async (req: Request, res: Response) => {
       lastName,
       email,
       phone,
+      cpf,
       role,
       authentication: {
         salt,

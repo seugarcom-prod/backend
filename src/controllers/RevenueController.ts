@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getRevenueReport } from "../services/index";
+import { getRevenueReport } from "../services/dashboard";
 
 export const getRevenue = async (req: Request, res: Response) => {
     const { restaurantUnitId } = req.params;
