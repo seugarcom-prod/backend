@@ -8,14 +8,18 @@ export interface IUser extends Document {
   lastName: string;
   email: string;
   phone: string;
-  avatar?: string; // Campo avatar adicionado como opcional
+  cpf: string;
+  avatar?: string;
   authentication: {
     password: string;
     salt: string;
     sessionToken: string;
   };
-  role: "ADMIN" | "MANAGER" | "ATTENDANT" | "CLIENT";
+  role: "MANAGER" | "ATTENDANT" | "CLIENT";  // Removido ADMIN
   orders: mongoose.Schema.Types.ObjectId[];
+  // Referências para restaurante e unidade
+  restaurant?: mongoose.Schema.Types.ObjectId;
+  restaurantUnit?: mongoose.Schema.Types.ObjectId;
 }
 
 const userSchema = new Schema(
@@ -33,9 +37,14 @@ const userSchema = new Schema(
       type: String,
       trim: true,
     },
+    cpf: {
+      type: String,
+      require: true
+    },
     email: {
       type: String,
       validate: [validator.isEmail, "Please, provide a valid email."],
+      require: true
     },
     phone: {
       type: String,
@@ -56,7 +65,7 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["ADMIN", "ATTENDANT", "CLIENT"],
+      enum: ["MANAGER", "ATTENDANT", "CLIENT"],  // Removido ADMIN
       default: 'CLIENT',
     },
     orders: [
@@ -64,7 +73,16 @@ const userSchema = new Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "Order"
       }
-    ]
+    ],
+    // Campos para referências
+    restaurant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant"
+    },
+    restaurantUnit: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RestaurantUnit"
+    }
   },
   { timestamps: true }
 );
@@ -93,14 +111,19 @@ export const getUserBySessionToken = (sessionToken: string) => {
 
 // Get User by Restaurant Unit
 export const getUserByUnit = (unit: string) => {
-  UserModel
-    .find({ unit })
-    .select("+authentication.sessionToken +role").find(getUsers);
-}
+  return UserModel
+    .find({ restaurantUnit: unit })
+    .select("+authentication.sessionToken +role");
+};
+
+// Get Users by Restaurant
+export const getUsersByRestaurant = (restaurantId: string) => {
+  return UserModel.find({ restaurant: restaurantId });
+};
 
 // Create User
-export const createUser = (values: Record<string, any>) =>
-  new UserModel(values).save().then((user) => user.toObject());
+export const createUser = (values: Record<string, any>, options = {}) =>
+  new UserModel(values).save(options).then((user) => user.toObject());
 
 // Delete User
 export const deleteUser = (id: string) =>

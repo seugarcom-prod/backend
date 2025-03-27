@@ -310,7 +310,7 @@
     }
   ],
   "paths": {
-    "/auth/": {
+    "/": {
       "post": {
         "summary": "User login",
         "description": "Endpoint for login",
@@ -398,7 +398,7 @@
         }
       }
     },
-    "/auth/guest/": {
+    "/guest/": {
       "post": {
         "summary": "Guest login",
         "description": "Endpoint for guest who don't wish to register on system",
@@ -461,7 +461,7 @@
         }
       }
     },
-    "/auth/logout/": {
+    "/logout/": {
       "patch": {
         "summary": "User logout",
         "description": "Endpoint for user logout",

@@ -7,7 +7,7 @@ import {
   getOrdersReport,
   getTopProducts,
   getDailyRevenueReport
-} from "../services/dashboard";
+} from "../services/index";
 import { OrderModel } from "../models/Order";
 
 // Interface para opções de filtro de data

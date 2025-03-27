@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { UserModel } from "../models/User";
 import { RestaurantUnitModel } from "../models/RestaurantUnit";
-import { createUser, getUserById, deleteUserById } from "../db/users";
+import { createUser, getUserById, deleteUser } from "../models/User";
 import { authentication, random } from "../helpers";
 
 // Listar funcionários de uma unidade específica

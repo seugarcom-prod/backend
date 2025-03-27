@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { IRestaurantUnit, IUser } from "./index";
 const Schema = mongoose.Schema;
 
 export interface IRestaurant extends Document {
@@ -17,82 +16,52 @@ export interface IRestaurant extends Document {
   specialty: string;
   phone: string;
   admin: {
-    fullName: typeof mongoose.Schema.Types.String | IUser;
-    cpf: typeof mongoose.Schema.Types.String | IUser;
-  }
-  units: typeof mongoose.Schema.Types.ObjectId | IRestaurantUnit;
-  attendants: typeof mongoose.Schema.Types.ObjectId | IUser;
+    email: string;  // Email principal para login do restaurante
+    fullName: string;
+    cpf: string;
+  };
+  units: mongoose.Types.ObjectId[];
+  attendants: mongoose.Types.ObjectId[];
+  authentication: {
+    password: string;
+    salt: string;
+    sessionToken: string;
+  },
 }
 
-const restaurantSchema = new Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      set: (v: string) => v.toLowerCase()
-    },
-    logo: {
-      type: String,
-    },
-    cnpj: {
-      type: String,
-      required: true,
-    },
-    socialName: {
-      type: String,
-    },
-    address: {
-      zipCode: {
-        type: String,
-        required: true,
-      },
-      street: {
-        type: String,
-        required: true
-      },
-      number: {
-        type: Number,
-        required: true
-      },
-      complement: {
-        type: String,
-      }
-    },
-    rating: {
-      type: Number,
-    },
-    specialty: {
-      type: String,
-    },
-    phone: {
-      type: String,
-      required: true
-    },
-    admin: {
-      fullName: {
-        type: mongoose.Schema.Types.String,
-        ref: "User"
-      },
-      cpf: {
-        type: mongoose.Schema.Types.String,
-        ref: "User"
-      }
-    },
-    units: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "RestaurantUnit",
-      },
-    ],
-    attendants: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      }
-    ]
+const restaurantSchema = new Schema({
+  name: { type: String, required: true, unique: true },
+  socialName: { type: String },
+  cnpj: { type: String, required: true, unique: true },
+  logo: { type: String },
+  address: {
+    zipCode: String,
+    street: String,
+    number: Number,
+    complement: String
   },
-  { timestamps: true }
-);
+  specialty: String,
+  phone: String,
+
+  // Informações do admin/proprietário do restaurante
+  admin: {
+    fullName: { type: String, required: true },
+    cpf: { type: String, required: true },
+    email: { type: String, required: true, unique: true }, // Email para login
+  },
+
+  // Credenciais de autenticação para o restaurante/admin
+  authentication: {
+    password: { type: String, required: true, select: false }, // Hash da senha
+    salt: { type: String, required: true, select: false }, // Salt para a senha
+    sessionToken: { type: String, select: false } // Token de sessão
+  },
+
+  units: [{ type: Schema.Types.ObjectId, ref: 'RestaurantUnit' }],
+  attendants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+
+  // Campos padrão de timestamp
+}, { timestamps: true });
 
 export const RestaurantModel = mongoose.model<IRestaurant>("Restaurant", restaurantSchema);
 
@@ -118,11 +87,24 @@ export const deleteRestaurant = (id: string) =>
 
 // Update Restaurant
 export const updateRestaurant = (id: string, values: Record<string, any>) =>
-  RestaurantModel.findByIdAndUpdate(id, values);
+  RestaurantModel.findByIdAndUpdate(id, values, { new: true });
 
 export const getRestaurantBySlug = (slug: string) => {
   const name = slug.replace(/-/g, ' ');
   return RestaurantModel.findOne({
     name: { $regex: new RegExp(`^${name}$`, 'i') }
   });
+};
+
+// Buscar restaurante pelo email do admin (para login)
+export const getRestaurantByEmail = (email: string) => {
+  return RestaurantModel.findOne({ 'admin.email': email })
+    .select('+authentication.password +authentication.salt +authentication.sessionToken');
+};
+
+// Buscar restaurante pelo token de sessão
+export const getRestaurantBySessionToken = (sessionToken: string) => {
+  return RestaurantModel.findOne({
+    'authentication.sessionToken': sessionToken,
+  }).select('+authentication.sessionToken');
 };

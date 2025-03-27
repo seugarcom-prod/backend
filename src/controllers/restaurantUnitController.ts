@@ -2,51 +2,45 @@ import { Request, Response } from "express";
 import {
   createRestaurantUnit,
   deleteRestaurantUnit,
-  getRestaurantUnit,
+  getRestaurantUnits,
   getRestaurantUnitById,
   updateRestaurantUnit,
+  RestaurantUnitModel,
 } from "../models/RestaurantUnit.ts";
-import { getRestaurantById, updateRestaurant } from "../models/Restaurant.ts";
+import { getRestaurantById, RestaurantModel, updateRestaurant } from "../models/Restaurant.ts";
 
-export const createRestaurantUnitController = async (
-  req: Request,
-  res: Response
-) => {
+export const addRestaurantUnitHandler = async (req: Request, res: Response) => {
   try {
-    const { restaurantId } = req.params; // Assumindo que agora passamos o restaurantId como parâmetro
-    const { cnpj, address, phone, manager, socialName, attendants } = req.body;
-
-    // Validar campos obrigatórios
-    if (!cnpj || !address || !phone || !manager) {
-      return res.status(400).json({ message: "Campos obrigatórios não fornecidos" });
-    }
+    const { restaurantId } = req.params;
+    const unitData = req.body;
 
     // Verificar se o restaurante existe
-    const restaurant = await getRestaurantById(restaurantId);
+    const restaurant = await RestaurantModel.findById(restaurantId);
     if (!restaurant) {
       return res.status(404).json({ message: "Restaurante não encontrado" });
     }
 
     // Criar a unidade
-    const restaurantUnit = await createRestaurantUnit({
-      address,
-      cnpj,
-      phone,
-      manager,
-      socialName,
-      attendants: attendants || [],
-      orders: []
+    const unit = new RestaurantUnitModel({
+      ...unitData,
+      restaurant: restaurantId
     });
 
-    // Adicionar a unidade ao restaurante
-    await updateRestaurant(restaurantId, {
-      $push: { units: restaurantUnit._id }
-    });
+    const savedUnit = await unit.save();
 
-    res.status(201).json(restaurantUnit);
-  } catch (error) {
-    console.log("Erro: ", error);
-    res.status(500).json({ message: "Erro ao criar unidade de restaurante", error });
+    // Atualizar o restaurante com referência à unidade
+    await RestaurantModel.findByIdAndUpdate(
+      restaurantId,
+      { $push: { units: savedUnit._id } }
+    );
+
+    return res.status(201).json({
+      message: "Unidade adicionada com sucesso",
+      unit: savedUnit
+    });
+  } catch (error: any) {
+    console.error("Erro ao adicionar unidade:", error);
+    return res.status(500).json({ message: "Erro interno do servidor", error: error.message });
   }
 };
 
@@ -70,7 +64,7 @@ export const getAllRestaurantUnitsController = async (
     }
 
     // Caso contrário, obtenha todas as unidades
-    const restaurantUnits = await getRestaurantUnit();
+    const restaurantUnits = await getRestaurantUnits();
     return res.status(200).json(restaurantUnits);
   } catch (error) {
     console.error("Erro ao buscar unidades:", error);

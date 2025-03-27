@@ -1,10 +1,15 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
-// Carrega as variáveis de ambiente do arquivo .env
-dotenv.config({ path: ".env" });
+dotenv.config();
 
-// URI do MongoDB (usando variável de ambiente)
+export const config = {
+    port: process.env.PORT,
+    mongodbUri: process.env.MONGODB_URI,
+    jwtSecret: process.env.JWT_SECRET || '',
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h'
+};
+
 const uri = process.env.MONGODB_URI;
 
 if (!uri) {
@@ -16,7 +21,7 @@ if (!uri) {
 const connectToDb = async () => {
     try {
         await mongoose.connect(uri, {
-            autoIndex: true, // Habilita a criação automática de índices
+            autoIndex: true,
         });
 
         console.log("Conectado ao MongoDB com sucesso.");

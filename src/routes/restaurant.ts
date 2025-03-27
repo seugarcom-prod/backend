@@ -1,48 +1,39 @@
 import { Router } from "express";
 import {
-  createRestaurantController,
-  deleteRestaurantController,
   getAllRestaurantsController,
   getRestaurantByIdController,
-  getRestaurantBySlugController,
   updateRestaurantController,
-} from "../controllers/RestaurantController.ts";
-import { isAuthenticated, hasRole } from "../middlewares/index.ts";
+  deleteRestaurantController,
+  registerRestaurantHandler,
+  loginRestaurantHandler,
+  getRestaurantBySlugController,
+} from "../controllers/RestaurantController";
+import { isAuthenticated, isRestaurantAdmin } from "../middlewares";
 
-export default (restaurantRouter: Router) => {
-  // Criar um novo restaurante
-  restaurantRouter.post(
-    "/restaurant",
-    createRestaurantController
-  );
+export default (router: Router) => {
+  // Rotas públicas
+  router.get("/restaurant", getAllRestaurantsController);
+  router.get("/restaurant/:id", getRestaurantByIdController);
+  router.get("/restaurant/by-slug/:slug", getRestaurantBySlugController);
 
-  // Obter todos os restaurantes
-  restaurantRouter.get(
-    "/restaurant",
-    getAllRestaurantsController
-  );
+  // Autenticação de restaurante
+  router.post("/restaurant/register", registerRestaurantHandler);
+  router.post("/restaurant/login", loginRestaurantHandler);
 
-  // Obter um restaurante específico por ID
-  restaurantRouter.get(
+  // Rotas protegidas (requerem autenticação de restaurante)
+  router.patch(
     "/restaurant/:id",
-    getRestaurantByIdController
-  );
-
-  restaurantRouter.get('/restaurant/by-slug/:slug', getRestaurantBySlugController);
-
-  // Atualizar um restaurante
-  restaurantRouter.put(
-    "/restaurant/:id",
-    // isAuthenticated,
-    // hasRole("ADMIN"),
+    isAuthenticated,
+    isRestaurantAdmin,
     updateRestaurantController
   );
 
-  // Excluir um restaurante
-  restaurantRouter.delete(
+  router.delete(
     "/restaurant/:id",
-    // isAuthenticated,
-    // hasRole("ADMIN"),
+    isAuthenticated,
+    isRestaurantAdmin,
     deleteRestaurantController
   );
+
+  return router;
 };

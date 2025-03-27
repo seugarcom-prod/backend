@@ -3,6 +3,7 @@ import { IUser } from "./index";
 const Schema = mongoose.Schema;
 
 export interface IRestaurantUnit extends Document {
+  name: string;
   address: {
     zipCode: string;
     street: string;
@@ -13,23 +14,29 @@ export interface IRestaurantUnit extends Document {
   socialName: string;
   manager: string;
   phone: string;
-  attendants: typeof mongoose.Schema.Types.ObjectId | IUser;
-  orders: mongoose.Schema.Types.ObjectId[];
+  attendants: mongoose.Types.ObjectId[]; // Corrigido para array de ObjectId
+  orders: mongoose.Types.ObjectId[];
+  restaurant: mongoose.Types.ObjectId; // Referência ao restaurante principal
+  isActive: boolean;
 };
 
 const restaurantUnitSchema = new Schema({
+  name: {
+    type: String,
+    required: true
+  },
   address: {
     zipCode: {
       type: String,
-      required: true,
+      required: false,
     },
     street: {
       type: String,
-      required: true
+      required: false
     },
     number: {
       type: Number,
-      required: true
+      required: false
     },
     complement: {
       type: String,
@@ -58,10 +65,19 @@ const restaurantUnitSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: "Order"
     }
-  ]
+  ],
+  restaurant: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Restaurant",
+    required: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  }
 });
 
-// 3. Create a Model.
+// Criar o modelo
 export const RestaurantUnitModel = mongoose.model<IRestaurantUnit>(
   "RestaurantUnit",
   restaurantUnitSchema
@@ -69,21 +85,25 @@ export const RestaurantUnitModel = mongoose.model<IRestaurantUnit>(
 
 // METHODS
 
-// Get All Restaurants
-export const getRestaurantUnit = () => RestaurantUnitModel.find();
+// Get All Restaurant Units
+export const getRestaurantUnits = () => RestaurantUnitModel.find();
 
-// Get Restaurant by Id
+// Get Restaurant Unit by Id
 export const getRestaurantUnitById = (id: string) =>
   RestaurantUnitModel.findById(id);
 
-// Create Restaurant
-export const createRestaurantUnit = (values: Record<string, any>) =>
-  new RestaurantUnitModel(values).save().then((user) => user.toObject());
+// Get Restaurant Units by Restaurant Id
+export const getRestaurantUnitsByRestaurant = (restaurantId: string) =>
+  RestaurantUnitModel.find({ restaurant: restaurantId });
 
-// Delete Restaurant
+// Create Restaurant Unit
+export const createRestaurantUnit = (values: Record<string, any>) =>
+  new RestaurantUnitModel(values).save().then((unit) => unit.toObject());
+
+// Delete Restaurant Unit
 export const deleteRestaurantUnit = (id: string) =>
   RestaurantUnitModel.findOneAndDelete({ _id: id });
 
-// Update Restaurant
+// Update Restaurant Unit
 export const updateRestaurantUnit = (id: string, values: Record<string, any>) =>
-  RestaurantUnitModel.findByIdAndUpdate(id, values);
+  RestaurantUnitModel.findByIdAndUpdate(id, values, { new: true });

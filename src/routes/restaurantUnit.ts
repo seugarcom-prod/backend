@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  createRestaurantUnitController,
+  addRestaurantUnitHandler,
   deleteRestaurantUnitController,
   getAllRestaurantUnitsController,
   getRestaurantUnitByIdController,
@@ -10,7 +10,6 @@ import {
 } from "../controllers/restaurantUnitController.ts";
 import { hasRole, isAuthenticated } from "../middlewares/index.ts";
 import { getRestaurantUnitOrdersController } from "../controllers/OrderController.ts";
-import { isAdmin } from "../middlewares/auth.ts";
 
 export default (restaurantUnitRouter: Router) => {
   // Criar uma nova unidade para um restaurante
@@ -18,7 +17,7 @@ export default (restaurantUnitRouter: Router) => {
     "/restaurant/:restaurantId/unit",
     // isAuthenticated,
     // isAdmin, // Em vez de hasRole("ADMIN")
-    createRestaurantUnitController
+    addRestaurantUnitHandler
   );
 
   // Obter todas as unidades de um restaurante
