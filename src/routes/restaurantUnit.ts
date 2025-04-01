@@ -8,21 +8,23 @@ import {
   addAttendantToUnitController,
   removeAttendantFromUnitController
 } from "../controllers/restaurantUnitController.ts";
-import { hasRole, isAuthenticated } from "../middlewares/index.ts";
+import { hasRole, isAuthenticated, isRestaurantAdmin } from "../middlewares/index.ts";
 import { getRestaurantUnitOrdersController } from "../controllers/OrderController.ts";
 
 export default (restaurantUnitRouter: Router) => {
   // Criar uma nova unidade para um restaurante
   restaurantUnitRouter.post(
     "/restaurant/:restaurantId/unit",
-    // isAuthenticated,
-    // isAdmin, // Em vez de hasRole("ADMIN")
+    isAuthenticated,
+    isRestaurantAdmin,
     addRestaurantUnitHandler
   );
 
   // Obter todas as unidades de um restaurante
   restaurantUnitRouter.get(
     "/restaurant/:restaurantId/unit",
+    isAuthenticated,
+    isRestaurantAdmin,
     getAllRestaurantUnitsController
   );
 
@@ -30,13 +32,15 @@ export default (restaurantUnitRouter: Router) => {
   restaurantUnitRouter.get(
     "/unit",
     isAuthenticated,
-    hasRole("ADMIN"),
+    isRestaurantAdmin,
     getAllRestaurantUnitsController
   );
 
   // Obter uma unidade específica por ID
   restaurantUnitRouter.get(
     "/unit/:unitId",
+    isAuthenticated,
+    isRestaurantAdmin,
     getRestaurantUnitByIdController
   );
 
@@ -44,7 +48,7 @@ export default (restaurantUnitRouter: Router) => {
   restaurantUnitRouter.put(
     "/unit/:unitId",
     isAuthenticated,
-    hasRole("ADMIN"),
+    isRestaurantAdmin,
     updateRestaurantUnitController
   );
 
@@ -52,7 +56,7 @@ export default (restaurantUnitRouter: Router) => {
   restaurantUnitRouter.delete(
     "/unit/:unitId/restaurant/:restaurantId",
     isAuthenticated,
-    hasRole("ADMIN"),
+    isRestaurantAdmin,
     deleteRestaurantUnitController
   );
 
@@ -67,7 +71,7 @@ export default (restaurantUnitRouter: Router) => {
   restaurantUnitRouter.post(
     "/unit/:unitId/attendant",
     isAuthenticated,
-    hasRole("ADMIN"),
+    isRestaurantAdmin,
     addAttendantToUnitController
   );
 
@@ -75,7 +79,7 @@ export default (restaurantUnitRouter: Router) => {
   restaurantUnitRouter.delete(
     "/unit/:unitId/attendant/:attendantId",
     isAuthenticated,
-    hasRole("ADMIN"),
+    isRestaurantAdmin,
     removeAttendantFromUnitController
   );
 };

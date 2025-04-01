@@ -20,6 +20,15 @@ export const addRestaurantUnitHandler = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Restaurante não encontrado" });
     }
 
+    if (req.isRestaurantAdmin && req.restaurant) {
+      // Se o ID do restaurante logado não corresponder ao ID fornecido, negar acesso
+      if (req.restaurant._id.toString() !== restaurantId) {
+        return res.status(403).json({ message: "Você não tem permissão para adicionar unidades a este restaurante" });
+      }
+    } else {
+      return res.status(403).json({ message: "Apenas administradores de restaurante podem adicionar unidades" });
+    }
+
     // Criar a unidade
     const unit = new RestaurantUnitModel({
       ...unitData,

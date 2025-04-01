@@ -15,7 +15,7 @@ export interface IUser extends Document {
     salt: string;
     sessionToken: string;
   };
-  role: "MANAGER" | "ATTENDANT" | "CLIENT";  // Removido ADMIN
+  role: "ADMIN" | "MANAGER" | "ATTENDANT" | "CLIENT";
   orders: mongoose.Schema.Types.ObjectId[];
   // Referências para restaurante e unidade
   restaurant?: mongoose.Schema.Types.ObjectId;
@@ -65,7 +65,7 @@ const userSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["MANAGER", "ATTENDANT", "CLIENT"],  // Removido ADMIN
+      enum: ["ADMIN", "MANAGER", "ATTENDANT", "CLIENT"],  // Adicionar ADMIN de volta
       default: 'CLIENT',
     },
     orders: [

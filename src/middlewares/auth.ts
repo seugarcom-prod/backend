@@ -34,45 +34,61 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
         }
 
         const token = authHeader.split(' ')[1]; // Formato: "Bearer TOKEN"
+        console.log("Token recebido:", token);
 
         // Verificar token JWT
         const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+        console.log("Token decodificado:", decoded);
 
         // Determinar se é um restaurante ou usuário normal baseado no campo role
-        if (decoded.role === 'RESTAURANT') {
+        if (decoded.role === 'ADMIN') {
             // Buscar restaurante
             const restaurant = await RestaurantModel.findById(decoded.sub)
                 .select('+authentication.sessionToken');
+            console.log("Restaurante encontrado:", !!restaurant);
 
             if (!restaurant) {
                 return res.status(401).json({ message: 'Restaurante não encontrado' });
             }
 
             // Verificar se o token armazenado corresponde ao token fornecido
+            console.log("Token armazenado:", restaurant.authentication?.sessionToken);
             if (!restaurant.authentication || restaurant.authentication.sessionToken !== token) {
                 return res.status(401).json({ message: 'Sessão inválida' });
             }
 
-            // Adicionar informações do restaurante à requisição
+            // Adicionar informações do restaurante e TAMBÉM ao user para compatibilidade
             req.restaurant = restaurant;
+            req.user = {
+                _id: restaurant._id,
+                role: 'ADMIN',
+                email: restaurant.admin.email,
+                firstName: restaurant.admin.fullName.split(' ')[0],
+                lastName: restaurant.admin.fullName.split(' ').slice(1).join(' ')
+            };
             req.isRestaurantAdmin = true;
+            req.identity = req.user; // Para compatibilidade com hasRole
             next();
         } else {
-            // É um usuário normal (MANAGER, ATTENDANT, CLIENT)
-            const user = await UserModel.findById(decoded.sub);
+            // É um usuário normal
+            const user = await UserModel.findById(decoded.sub)
+                .select('+authentication.sessionToken');
+            console.log("Usuário encontrado:", !!user);
 
             if (!user) {
                 return res.status(401).json({ message: 'Usuário não encontrado' });
             }
 
             // Verificar se o token armazenado corresponde ao token fornecido
+            console.log("Token armazenado:", user.authentication?.sessionToken);
             if (!user.authentication || user.authentication.sessionToken !== token) {
                 return res.status(401).json({ message: 'Sessão inválida' });
             }
 
-            // Adicionar o usuário ao objeto de requisição para uso downstream
+            // Adicionar o usuário ao objeto de requisição
             req.user = user;
-            req.isRestaurantAdmin = false;
+            req.isRestaurantAdmin = user.role === 'ADMIN';
+            req.identity = user; // Para compatibilidade com hasRole
             next();
         }
     } catch (error) {
@@ -103,7 +119,7 @@ export const isManager = (req: Request, res: Response, next: NextFunction) => {
 export const isAttendantOrAbove = (req: Request, res: Response, next: NextFunction) => {
     if (
         req.isRestaurantAdmin ||
-        (req.user && ['MANAGER', 'ATTENDANT'].includes(req.user.role))
+        (req.user && ['ADMIN', 'MANAGER', 'ATTENDANT'].includes(req.user.role))
     ) {
         next();
     } else {

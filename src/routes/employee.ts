@@ -9,7 +9,6 @@ import {
 } from "../controllers/EmployeeController";
 import {
     isAuthenticated,
-    isAdmin,
     hasRole,
 } from "../middlewares/index";
 
@@ -34,7 +33,6 @@ export default (router: Router) => {
     router.post(
         "/employee/create",
         isAuthenticated,
-        isAdmin,
         createEmployeeController
     );
 
@@ -42,7 +40,6 @@ export default (router: Router) => {
     router.patch(
         "/employee/:id/update",
         isAuthenticated,
-        isAdmin,
         updateEmployeeController
     );
 
@@ -50,7 +47,6 @@ export default (router: Router) => {
     router.delete(
         "/employee/:id/delete",
         isAuthenticated,
-        isAdmin,
         deleteEmployeeController
     );
 };

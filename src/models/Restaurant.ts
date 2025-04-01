@@ -16,7 +16,7 @@ export interface IRestaurant extends Document {
   specialty: string;
   phone: string;
   admin: {
-    email: string;  // Email principal para login do restaurante
+    email: string;
     fullName: string;
     cpf: string;
   };
@@ -27,6 +27,11 @@ export interface IRestaurant extends Document {
     salt: string;
     sessionToken: string;
   },
+  businessHours?: Array<{
+    days: string[];
+    open: string;
+    close: string;
+  }>;
 }
 
 const restaurantSchema = new Schema({
@@ -59,7 +64,11 @@ const restaurantSchema = new Schema({
 
   units: [{ type: Schema.Types.ObjectId, ref: 'RestaurantUnit' }],
   attendants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-
+  businessHours: [{
+    days: [String],
+    open: String,
+    close: String
+  }],
   // Campos padrão de timestamp
 }, { timestamps: true });
 
