@@ -14,7 +14,6 @@ export default (router: Router) => {
   router.get("/restaurant/:id", getRestaurantByIdController);
   router.get("/restaurant/by-slug/:slug", getRestaurantBySlugController);
 
-
   // Rotas protegidas (requerem autenticação de restaurante)
   router.patch(
     "/restaurant/:id",

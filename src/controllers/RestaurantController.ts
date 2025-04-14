@@ -9,7 +9,7 @@ import {
   updateRestaurant,
   getRestaurantByEmail,
 } from "../models/Restaurant.ts";
-import { RestaurantUnitModel } from "../models/RestaurantUnit.ts";
+import { getRestaurantUnitsByRestaurant, RestaurantUnitModel } from "../models/RestaurantUnit.ts";
 
 
 export const getAllRestaurantsController = async (
@@ -146,5 +146,20 @@ export const deleteRestaurantController = async (
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Erro ao excluir restaurante", error });
+  }
+};
+
+export const getRestaurantUnitsController = async (req: express.Request, res: express.Response) => {
+  try {
+    const { restaurantId } = req.params;
+    const units = await getRestaurantUnitsByRestaurant(restaurantId);
+
+    if (!units || units.length === 0) {
+      return res.status(404).json({ message: "Nenhuma unidade encontrada para este restaurante." });
+    }
+    res.json(units);
+  } catch (error) {
+    console.error("Erro ao buscar unidades:", error);
+    return res.status(500).json({ message: "Erro ao buscar unidades", error });
   }
 };

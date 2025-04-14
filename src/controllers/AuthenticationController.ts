@@ -37,64 +37,63 @@ const issueJWT = (id: string, email: string, role: string, expiresIn = "7d") => 
 export const loginAdminHandler = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+    console.log("Request body:", req.body);
 
     if (!email || !password) {
+      console.log("Campos obrigatórios faltando");
       return res
         .status(400)
         .json({ message: "E-mail e senha são obrigatórios" });
     }
 
-    // Buscar restaurante pelo email do admin
+    console.log("Buscando usuário ADMIN com email:", email);
+    // Incluir o campo restaurant na busca
+    const user = await UserModel.findOne({
+      email,
+      role: "ADMIN"
+    }).select('+authentication.password +authentication.salt +restaurant');
+    console.log("Usuário encontrado:", user ? "Sim" : "Não");
+
+    if (user) {
+      console.log("Verificando credenciais do usuário ADMIN");
+      if (!user.authentication || !user.authentication.salt) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      const expectedHash = authentication(user.authentication.salt, password);
+
+      if (expectedHash !== user.authentication.password) {
+        return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      const token = issueJWT(
+        user._id.toString(),
+        user.email || "",
+        "ADMIN"
+      );
+
+      user.authentication.sessionToken = token;
+      await user.save();
+
+      // Incluir o restaurantId na resposta
+      return res.status(200).json({
+        message: "Login realizado com sucesso",
+        user: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: "ADMIN",
+          restaurantId: user.restaurant // ID do restaurante vinculado ao usuário
+        },
+        token,
+      });
+    }
+
+    // Resto do código para login via restaurant permanece igual
     const restaurant = await getRestaurantByEmail(email);
+    // ...
 
-    if (!restaurant) {
-      return res
-        .status(401)
-        .json({ message: "Credenciais inválidas" });
-    }
-
-    // Verificar a senha
-    if (!restaurant.authentication || !restaurant.authentication.salt) {
-      return res.status(401).json({ message: "Credenciais inválidas" });
-    }
-
-    const expectedHash = generateHash(password, restaurant.authentication.salt);
-
-    if (expectedHash !== restaurant.authentication.password) {
-      return res
-        .status(401)
-        .json({ message: "Credenciais inválidas" });
-    }
-
-    // Gerar token JWT com role "ADMIN"
-    const token = issueJWT(
-      restaurant._id.toString(),
-      restaurant.admin.email,
-      "ADMIN"
-    );
-
-    // Atualizar token de sessão no restaurante
-    restaurant.authentication.sessionToken = token;
-    await restaurant.save();
-
-    // Buscar a unidade principal
-    const units = restaurant.units.length > 0
-      ? await RestaurantUnitModel.find({ _id: { $in: restaurant.units } }).select('_id name')
-      : [];
-
-    return res.status(200).json({
-      message: "Login realizado com sucesso",
-      restaurant: {
-        _id: restaurant._id,
-        name: restaurant.name,
-        admin: {
-          fullName: restaurant.admin.fullName,
-          email: restaurant.admin.email
-        }
-      },
-      units,
-      token,
-    });
   } catch (error: any) {
     console.error("Erro ao realizar login de administrador:", error);
     return res
@@ -199,14 +198,18 @@ export const loginUserHandler = async (req: Request, res: Response) => {
 };
 
 // Rota unificada de login que decide qual handler usar
-export const loginHandler = async (req: Request, res: Response) => {
+export const loginHandler = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { email, password, userType } = req.body;
+    const { email, password, role } = req.body;
 
     // Se userType for especificado, usamos o handler apropriado
-    if (userType === 'ADMIN') {
-      return loginAdminHandler(req, res);
-    } else if (userType === 'user') {
+    if (role === 'ADMIN') {
+      const adminResponse = await loginAdminHandler(req, res);
+      if (!adminResponse) {
+        return res.status(500).json({ message: "Erro interno no servidor" });
+      }
+      return adminResponse;
+    } else if (role === 'CLIENT') {
       return loginUserHandler(req, res);
     }
 
@@ -214,7 +217,11 @@ export const loginHandler = async (req: Request, res: Response) => {
     // Primeiro tentamos como restaurante
     const restaurant = await getRestaurantByEmail(email);
     if (restaurant) {
-      return loginAdminHandler(req, res);
+      const adminResponse = await loginAdminHandler(req, res);
+      if (!adminResponse) {
+        return res.status(500).json({ message: "Erro interno no servidor" });
+      }
+      return adminResponse;
     }
 
     // Se não encontrar como restaurante, tenta como usuário
@@ -226,6 +233,7 @@ export const loginHandler = async (req: Request, res: Response) => {
       .json({ message: "Erro interno no servidor", error: error.message });
   }
 };
+
 // Registrar um novo restaurante
 export const registerAdminWithRestaurantHandler = async (req: Request, res: Response) => {
   try {
@@ -246,31 +254,25 @@ export const registerAdminWithRestaurantHandler = async (req: Request, res: Resp
 
     // Validar campos obrigatórios
     if (!firstName || !lastName || !email || !password || !name || !cpf || !cnpj) {
-      return res
-        .status(400)
-        .json({ message: "Todos os campos obrigatórios devem ser preenchidos" });
+      return res.status(400).json({ message: "Todos os campos obrigatórios devem ser preenchidos" });
     }
 
     // Verificar se o email já está em uso
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "Este e-mail já está em uso" });
+      return res.status(400).json({ message: "Este e-mail já está em uso" });
     }
 
     // Verificar se o nome do restaurante já está em uso
     const existingRestaurantByName = await RestaurantModel.findOne({
-      name: { $regex: new RegExp('^' + name + '$', 'i') }
+      name: { $regex: new RegExp('^' + name + '.*', 'i') }
     });
 
     if (existingRestaurantByName) {
-      return res
-        .status(400)
-        .json({ message: "Este nome de restaurante já está em uso" });
+      return res.status(400).json({ message: "Este nome de restaurante já está em uso" });
     }
 
-    // 1. Primeiro criar o usuário ADMIN
+    // Criar o usuário ADMIN
     const salt = random();
     const hash = authentication(salt.toString(), password);
 
@@ -288,9 +290,9 @@ export const registerAdminWithRestaurantHandler = async (req: Request, res: Resp
       role: "ADMIN",
     });
 
-    // 2. Agora criar o restaurante e vincular ao admin
+    // Criar o restaurante
     const restaurantData = {
-      name: name,
+      name,
       logo: "", // Pode adicionar depois
       cnpj,
       socialName: socialName || name,
@@ -315,15 +317,8 @@ export const registerAdminWithRestaurantHandler = async (req: Request, res: Resp
       },
       units: [],
       attendants: [adminUser._id], // Adicionar o admin como atendente
-      businessHours: businessHours || [], // Adicionar os horários de funcionamento, se existirem
+      businessHours: businessHours || [],
     };
-
-    // Importante: Salvar os horários de funcionamento, se existirem
-    if (businessHours && Array.isArray(businessHours)) {
-      restaurantData.businessHours = businessHours;
-    }
-
-    console.log("Dados do restaurante a serem salvos:", restaurantData);
 
     const restaurant = new RestaurantModel(restaurantData);
     const savedRestaurant = await restaurant.save();
@@ -333,14 +328,30 @@ export const registerAdminWithRestaurantHandler = async (req: Request, res: Resp
       throw new Error("Falha ao criar o restaurante");
     }
 
-    console.log("Restaurante salvo com sucesso:", savedRestaurant._id);
-
     // Atualizar o usuário com referência ao restaurante
     await UserModel.findByIdAndUpdate(adminUser._id, {
       restaurant: savedRestaurant._id
     });
 
-    console.log("Usuário atualizado com referência ao restaurante");
+    // Criar a unidade de restaurante
+    const unitData = {
+      name: savedRestaurant.name,
+      address: savedRestaurant.address,
+      cnpj: savedRestaurant.cnpj,
+      socialName: savedRestaurant.socialName,
+      phone: savedRestaurant.phone,
+      manager: adminUser._id, // O administrador é o gerente da unidade
+      attendants: [adminUser._id], // O administrador é o primeiro atendente
+      restaurant: savedRestaurant._id
+    };
+
+    const restaurantUnit = new RestaurantUnitModel(unitData);
+    const savedUnit = await restaurantUnit.save();
+
+    // Adicionar a unidade ao restaurante
+    await RestaurantModel.findByIdAndUpdate(savedRestaurant._id, {
+      $push: { units: savedUnit._id }
+    });
 
     // Gerar token JWT para autenticação imediata
     const token = issueJWT(adminUser._id.toString(), email, "ADMIN");
@@ -355,7 +366,7 @@ export const registerAdminWithRestaurantHandler = async (req: Request, res: Resp
     });
 
     return res.status(201).json({
-      message: "Restaurante e usuário admin criados com sucesso",
+      message: "Restaurante, usuário admin e unidade criados com sucesso",
       user: {
         _id: adminUser._id,
         firstName: adminUser.firstName,
@@ -366,6 +377,10 @@ export const registerAdminWithRestaurantHandler = async (req: Request, res: Resp
       restaurant: {
         _id: savedRestaurant._id,
         name: savedRestaurant.name,
+      },
+      unit: {
+        _id: savedUnit._id,
+        name: savedUnit.name,
       },
       token,
     });
@@ -661,81 +676,44 @@ export const registerAttendantHandler = async (req: Request, res: Response) => {
 };
 
 // Verificar token JWT (útil para validação de sessão)
+// controllers/AuthenticationController.ts
 export const validateTokenHandler = async (req: Request, res: Response) => {
   try {
-    // O middleware de autenticação já deve ter verificado o token e preenchido req.user ou req.restaurant
-
+    // Aqui, o middleware já verificou o token
     if (req.isRestaurantAdmin && req.restaurant) {
-      // É um admin de restaurante
       const restaurant = req.restaurant;
 
-      // Buscar unidades do restaurante
+      // Buscar unidades (simplifique se necessário)
       const units = await RestaurantUnitModel.find({
-        _id: { $in: restaurant.units }
+        _id: { $in: restaurant.units || [] }
       }).select('_id name');
 
       return res.status(200).json({
         isValid: true,
-        userType: 'ADMIN',
+        user: {
+          _id: restaurant._id,
+          firstName: restaurant.admin.fullName,
+          lastName: "",
+          email: restaurant.admin.email,
+          role: "ADMIN" // Garantir que retorne "ADMIN" e não "RESTAURANT"
+        },
         restaurant: {
           _id: restaurant._id,
-          name: restaurant.name,
-          admin: {
-            fullName: restaurant.admin.fullName,
-            email: restaurant.admin.email
-          }
+          name: restaurant.name
         },
         units: units || []
       });
     } else if (req.user) {
-      // É um usuário normal
-      const user = req.user;
-
-      // Inicializar restaurantInfo como null
-      let restaurantInfo = null;
-
-      // Verificar se o usuário tem role que necessita de informações de restaurante
-      if (["MANAGER", "ATTENDANT"].includes(user.role)) {
-        // Se o usuário tiver a referência ao restaurantUnit, buscar informações
-        if (user.restaurantUnit) {
-          try {
-            const unit = await RestaurantUnitModel.findById(user.restaurantUnit);
-
-            if (unit) {
-              // Buscar o restaurante associado, se existir
-              const restaurant = user.restaurant
-                ? await RestaurantModel.findById(user.restaurant)
-                : null;
-
-              restaurantInfo = {
-                restaurant: restaurant ? {
-                  _id: restaurant._id,
-                  name: restaurant.name,
-                } : undefined,
-                unit: {
-                  _id: unit._id,
-                  name: unit.socialName || `Unidade ${unit._id}`
-                }
-              };
-            }
-          } catch (error) {
-            console.error("Erro ao buscar informações do restaurante:", error);
-            // Continuar mesmo se houver erro ao buscar restaurante
-          }
-        }
-      }
-
       return res.status(200).json({
         isValid: true,
-        userType: 'user',
+        role: 'CLIENT',
         user: {
-          _id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          role: user.role,
-        },
-        restaurantInfo
+          _id: req.user._id,
+          firstName: req.user.firstName,
+          lastName: req.user.lastName,
+          email: req.user.email,
+          role: req.user.role,
+        }
       });
     } else {
       return res.status(401).json({
@@ -747,8 +725,7 @@ export const validateTokenHandler = async (req: Request, res: Response) => {
     console.error("Erro ao validar token:", error);
     return res.status(500).json({
       isValid: false,
-      message: "Erro interno do servidor",
-      error: error.message
+      message: "Erro interno do servidor"
     });
   }
 };

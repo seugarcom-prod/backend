@@ -33,6 +33,7 @@ export default (router: Router) => {
     router.post(
         "/employee/create",
         isAuthenticated,
+        hasRole('ADMIN'),
         createEmployeeController
     );
 

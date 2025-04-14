@@ -80,7 +80,7 @@ export const createEmployeeController = async (req: Request, res: Response) => {
         const { firstName, lastName, email, phone, password, role, unitId } = req.body;
 
         // Verifica campos obrigatórios
-        if (!firstName || !lastName || !email || !password || !role || !unitId) {
+        if (!firstName || !lastName || !email || !role || !unitId) {
             return res.status(400).json({
                 message: "Todos os campos obrigatórios devem ser preenchidos"
             });

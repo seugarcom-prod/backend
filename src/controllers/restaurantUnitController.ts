@@ -14,34 +14,39 @@ export const addRestaurantUnitHandler = async (req: Request, res: Response) => {
     const { restaurantId } = req.params;
     const unitData = req.body;
 
-    // Verificar se o restaurante existe
-    const restaurant = await RestaurantModel.findById(restaurantId);
+    // Verificar se o restaurante existe e fazer eager loading das unidades existentes
+    const restaurant = await RestaurantModel.findById(restaurantId).populate('units');
     if (!restaurant) {
       return res.status(404).json({ message: "Restaurante não encontrado" });
     }
 
-    if (req.isRestaurantAdmin && req.restaurant) {
-      // Se o ID do restaurante logado não corresponder ao ID fornecido, negar acesso
-      if (req.restaurant._id.toString() !== restaurantId) {
-        return res.status(403).json({ message: "Você não tem permissão para adicionar unidades a este restaurante" });
-      }
-    } else {
-      return res.status(403).json({ message: "Apenas administradores de restaurante podem adicionar unidades" });
+    // Verificar se já existe uma unidade com o mesmo CNPJ
+    const existingUnit = await RestaurantUnitModel.findOne({ cnpj: unitData.cnpj });
+    if (existingUnit) {
+      return res.status(400).json({ message: "Já existe uma unidade com este CNPJ" });
     }
 
-    // Criar a unidade
+    // Validar permissões
+    if (!req.isRestaurantAdmin || req.restaurant._id.toString() !== restaurantId) {
+      return res.status(403).json({
+        message: "Você não tem permissão para adicionar unidades a este restaurante"
+      });
+    }
+
+    // Criar a unidade com dados completos
     const unit = new RestaurantUnitModel({
       ...unitData,
-      restaurant: restaurantId
+      restaurant: restaurantId,
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
     const savedUnit = await unit.save();
 
-    // Atualizar o restaurante com referência à unidade
-    await RestaurantModel.findByIdAndUpdate(
-      restaurantId,
-      { $push: { units: savedUnit._id } }
-    );
+    // Atualizar o restaurante com a nova unidade
+    restaurant.units.push(savedUnit._id);
+    await restaurant.save();
 
     return res.status(201).json({
       message: "Unidade adicionada com sucesso",

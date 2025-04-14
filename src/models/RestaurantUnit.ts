@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { IUser } from "./index";
 const Schema = mongoose.Schema;
 
 export interface IRestaurantUnit extends Document {

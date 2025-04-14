@@ -6,12 +6,14 @@ import requests from "./order";
 import order from "./order";
 import products from './products';
 import restaurantUnit from './restaurantUnit';
-
-const router = Router();
+import employee from "./employee";
 
 export default (): Router => {
+  const router = Router();
+
   auth(router);
   user(router);
+  employee(router);
   order(router);
   products(router);
   restaurant(router);

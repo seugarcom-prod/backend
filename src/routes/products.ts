@@ -12,36 +12,36 @@ import { hasRole, isAuthenticated } from "../middlewares/index.ts";
 export default (productsRouter: Router) => {
   productsRouter.post(
     "/restaurant/:id/products/",
-    // isAuthenticated,
-    // hasRole("ADMIN"),
+    isAuthenticated,
+    hasRole("ADMIN"),
     createFoodController
   );
   productsRouter.post(
     "/restaurant/:id/products_multi/",
-    // isAuthenticated,
-    // hasRole("ADMIN"),
+    isAuthenticated,
+    hasRole("ADMIN"),
     createMultipleProductsController
   );
   productsRouter.get(
     "/restaurant/:id/products/",
-    // isAuthenticated,
+    isAuthenticated,
     getAllFoodsController
   );
   productsRouter.get(
     "/restaurant/:id/products/",
-    // isAuthenticated,
+    isAuthenticated,
     getFoodByIdController
   );
   productsRouter.patch(
     "/restaurant/:id/products/:id/update",
-    // hasRole("ADMIN"),
-    // isAuthenticated,
+    hasRole("ADMIN"),
+    isAuthenticated,
     updateFoodController
   );
   productsRouter.delete(
     "/restaurant/:id/products/:id/delete",
-    // hasRole("ADMIN"),
-    // isAuthenticated,
+    hasRole("ADMIN"),
+    isAuthenticated,
     deleteFoodController
   );
 };
