@@ -3,8 +3,41 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { UserModel } from "../models/User";
 import { RestaurantUnitModel } from "../models/RestaurantUnit";
-import { createUser, getUserById, deleteUser } from "../models/User";
 import { authentication, random } from "../helpers";
+
+// Listar funcionários de todo o restaurante
+export const getEmployeesByRestaurantController = async (req: Request, res: Response) => {
+    try {
+        const { id: restaurantId } = req.params;
+        console.log("RestaurantId: ", restaurantId)
+
+        // Verifica se o ID do restaurante é válido
+        if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+            return res.status(400).json({
+                message: "ID de restaurante inválido"
+            });
+        }
+
+        // Busca todos os funcionários associados ao restaurante
+        const employees = await UserModel.find({
+            restaurant: restaurantId,
+            role: { $in: ["MANAGER", "ATTENDANT"] }
+        }).select("firstName lastName avatar restaurantUnit role");
+
+        if (employees.length === 0) {
+            return res.status(404).json({
+                message: "Nenhum funcionário encontrado para este restaurante"
+            });
+        }
+
+        return res.status(200).json(employees);
+    } catch (error: any) {
+        console.error("Erro ao buscar funcionários do restaurante:", error);
+        return res.status(500).json({
+            message: error.message || "Erro interno no servidor"
+        });
+    }
+};
 
 // Listar funcionários de uma unidade específica
 export const getEmployeesByUnitController = async (req: Request, res: Response) => {
@@ -77,7 +110,7 @@ export const getEmployeeByIdController = async (req: Request, res: Response) => 
 // Criar um novo funcionário
 export const createEmployeeController = async (req: Request, res: Response) => {
     try {
-        const { firstName, lastName, email, phone, password, role, unitId } = req.body;
+        const { firstName, lastName, email, phone, password, role, id: restaurantId, unitId } = req.body;
 
         // Verifica campos obrigatórios
         if (!firstName || !lastName || !email || !role || !unitId) {

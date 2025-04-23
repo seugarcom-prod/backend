@@ -17,7 +17,6 @@ export interface IUser extends Document {
   };
   role: "ADMIN" | "MANAGER" | "ATTENDANT" | "CLIENT";
   orders: mongoose.Schema.Types.ObjectId[];
-  // Referências para restaurante e unidade
   restaurant?: mongoose.Schema.Types.ObjectId;
   restaurantUnit?: mongoose.Schema.Types.ObjectId;
 }

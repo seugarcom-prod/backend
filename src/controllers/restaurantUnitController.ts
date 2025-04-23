@@ -1,20 +1,24 @@
 import { Request, Response } from "express";
 import {
-  createRestaurantUnit,
   deleteRestaurantUnit,
-  getRestaurantUnits,
   getRestaurantUnitById,
   updateRestaurantUnit,
   RestaurantUnitModel,
+  getRestaurantUnitsWithMatrix
 } from "../models/RestaurantUnit.ts";
-import { getRestaurantById, RestaurantModel, updateRestaurant } from "../models/Restaurant.ts";
+import { RestaurantModel, updateRestaurant } from "../models/Restaurant.ts";
+import { UserModel } from "../models/User.ts";
 
-export const addRestaurantUnitHandler = async (req: Request, res: Response) => {
+export const addRestaurantUnitController = async (req: Request, res: Response) => {
   try {
     const { restaurantId } = req.params;
     const unitData = req.body;
 
-    // Verificar se o restaurante existe e fazer eager loading das unidades existentes
+    if (!restaurantId) {
+      return res.status(400).json({ message: "ID do restaurante é obrigatório" });
+    }
+
+    // Verificar se o restaurante existe
     const restaurant = await RestaurantModel.findById(restaurantId).populate('units');
     if (!restaurant) {
       return res.status(404).json({ message: "Restaurante não encontrado" });
@@ -26,63 +30,111 @@ export const addRestaurantUnitHandler = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Já existe uma unidade com este CNPJ" });
     }
 
-    // Validar permissões
-    if (!req.isRestaurantAdmin || req.restaurant._id.toString() !== restaurantId) {
-      return res.status(403).json({
-        message: "Você não tem permissão para adicionar unidades a este restaurante"
-      });
-    }
-
     // Criar a unidade com dados completos
     const unit = new RestaurantUnitModel({
-      ...unitData,
+      name: unitData.name,
+      socialName: unitData.socialName,
+      cnpj: unitData.cnpj,
+      phone: unitData.phone,
+      address: unitData.address,
+      businessHours: unitData.businessHours,
+      managers: unitData.managers || [], // Garantir que managers seja incluído
       restaurant: restaurantId,
+      isMatrix: false,
       status: 'active',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      isActive: true
     });
 
     const savedUnit = await unit.save();
+
+    // Se houver managers, atualizar seus registros para incluir a unidade
+    if (unitData.managers && unitData.managers.length > 0) {
+      await UserModel.updateMany(
+        { _id: { $in: unitData.managers } },
+        {
+          $set: {
+            role: 'MANAGER',
+            restaurant: restaurantId,
+            restaurantUnit: savedUnit._id
+          }
+        }
+      );
+    }
 
     // Atualizar o restaurante com a nova unidade
     restaurant.units.push(savedUnit._id);
     await restaurant.save();
 
+    // Buscar a unidade populada com os managers para retornar
+    const populatedUnit = await RestaurantUnitModel
+      .findById(savedUnit._id)
+      .populate('managers', 'firstName lastName email');
+
     return res.status(201).json({
       message: "Unidade adicionada com sucesso",
-      unit: savedUnit
+      unit: populatedUnit
     });
+
   } catch (error: any) {
     console.error("Erro ao adicionar unidade:", error);
-    return res.status(500).json({ message: "Erro interno do servidor", error: error.message });
+    return res.status(500).json({
+      message: "Erro ao adicionar unidade",
+      error: error.message
+    });
   }
 };
 
-export const getAllRestaurantUnitsController = async (
-  req: Request,
-  res: Response
-) => {
+// controllers/RestaurantUnitController.ts
+export const getAllRestaurantUnitsController = async (req: Request, res: Response) => {
   try {
     const { restaurantId } = req.params;
+    const { includeMatrix } = req.query;
 
-    // Se um restaurantId for fornecido, obtenha apenas as unidades desse restaurante
-    if (restaurantId) {
-      const restaurant = await getRestaurantById(restaurantId);
-      if (!restaurant) {
-        return res.status(404).json({ message: "Restaurante não encontrado" });
-      }
-
-      // Popula as unidades do restaurante
-      await restaurant.populate('units');
-      return res.status(200).json(restaurant.units);
+    if (!restaurantId) {
+      return res.status(400).json({ message: "ID do restaurante é obrigatório" });
     }
 
-    // Caso contrário, obtenha todas as unidades
-    const restaurantUnits = await getRestaurantUnits();
-    return res.status(200).json(restaurantUnits);
-  } catch (error) {
+    // Buscar o restaurante com suas unidades e managers populados
+    const restaurant = await RestaurantModel
+      .findById(restaurantId)
+      .populate({
+        path: 'units',
+        populate: {
+          path: 'managers',
+          select: 'firstName lastName email' // Selecionar os campos necessários
+        }
+      });
+
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurante não encontrado" });
+    }
+
+    // Filtrar unidades baseado no parâmetro includeMatrix
+    let units = restaurant.units;
+    if (includeMatrix !== 'true') {
+      units = units.filter((unit: any) => !unit.isMatrix);
+    }
+
+    return res.status(200).json({
+      units: units.map((unit: any) => ({
+        _id: unit._id,
+        name: unit.name,
+        managers: unit.managers, // Agora enviando o array completo de managers
+        cnpj: unit.cnpj,
+        status: unit.status,
+        isMatrix: unit.isMatrix,
+        isTopSeller: unit.isTopSeller,
+        address: unit.address,
+        businessHours: unit.businessHours
+      }))
+    });
+
+  } catch (error: any) {
     console.error("Erro ao buscar unidades:", error);
-    return res.status(500).json({ message: "Erro ao buscar unidades de restaurante", error });
+    return res.status(500).json({
+      message: "Erro ao buscar unidades",
+      error: error.message
+    });
   }
 };
 
@@ -92,16 +144,37 @@ export const getRestaurantUnitByIdController = async (
 ) => {
   try {
     const { unitId } = req.params;
-    const restaurantUnit = await getRestaurantUnitById(unitId);
 
+    // Verificar se é a matriz (ID do restaurante)
+    const restaurant = await RestaurantModel.findById(unitId);
+    if (restaurant) {
+      // Retornar dados formatados como unidade matriz
+      return res.json({
+        _id: restaurant._id,
+        name: `${restaurant.name} (Matriz)`,
+        isMatrix: true,
+        address: restaurant.address,
+        cnpj: restaurant.cnpj,
+        socialName: restaurant.socialName,
+        manager: restaurant.managers || '',
+        phone: restaurant.phone,
+        attendants: [],
+        orders: [],
+        restaurant: restaurant._id,
+        isActive: true
+      });
+    }
+
+    // Se não for matriz, buscar unidade normal
+    const restaurantUnit = await getRestaurantUnitById(unitId);
     if (!restaurantUnit) {
-      return res.status(404).json({ message: "Unidade de restaurante não encontrada" });
+      return res.status(404).json({ message: "Unidade não encontrada" });
     }
 
     res.json(restaurantUnit);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "Erro ao buscar unidade de restaurante", error });
+    return res.status(500).json({ message: "Erro ao buscar unidade", error });
   }
 };
 
@@ -111,23 +184,36 @@ export const updateRestaurantUnitController = async (
 ) => {
   try {
     const { unitId } = req.params;
-    const { address, cnpj, phone, manager, socialName, attendants } = req.body;
+    const updateData = req.body;
 
-    // Verificar se a unidade existe
-    const restaurantUnit = await getRestaurantUnitById(unitId);
-    if (!restaurantUnit) {
-      return res.status(404).json({ message: "Unidade de restaurante não encontrada" });
+    // Não permitir alteração do status de matriz
+    if ('isMatrix' in updateData) {
+      return res.status(400).json({
+        message: "Não é permitido alterar o status de matriz de uma unidade"
+      });
+    }
+
+    // Verificar se é uma unidade matriz
+    const unit = await getRestaurantUnitById(unitId);
+    if (!unit) {
+      return res.status(404).json({ message: "Unidade não encontrada" });
+    }
+
+    if (unit.isMatrix) {
+      return res.status(400).json({
+        message: "Não é permitido modificar a unidade matriz diretamente"
+      });
     }
 
     // Criar objeto com valores a serem atualizados
     const updateValues: Record<string, any> = {};
+    const allowedFields = ['address', 'cnpj', 'phone', 'manager', 'socialName', 'attendants'];
 
-    if (address) updateValues.address = address;
-    if (cnpj) updateValues.cnpj = cnpj;
-    if (phone) updateValues.phone = phone;
-    if (manager) updateValues.manager = manager;
-    if (socialName) updateValues.socialName = socialName;
-    if (attendants) updateValues.attendants = attendants;
+    for (const field of allowedFields) {
+      if (field in updateData) {
+        updateValues[field] = updateData[field];
+      }
+    }
 
     // Aplicar a atualização
     const updatedUnit = await updateRestaurantUnit(unitId, updateValues);
@@ -135,7 +221,7 @@ export const updateRestaurantUnitController = async (
     return res.status(200).json(updatedUnit || { message: "Unidade atualizada com sucesso" });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "Erro ao atualizar unidade de restaurante", error });
+    return res.status(500).json({ message: "Erro ao atualizar unidade", error });
   }
 };
 
@@ -146,10 +232,18 @@ export const deleteRestaurantUnitController = async (
   try {
     const { unitId, restaurantId } = req.params;
 
+    // Verificar se é uma tentativa de deletar a matriz
+    const restaurant = await RestaurantModel.findById(unitId);
+    if (restaurant) {
+      return res.status(400).json({
+        message: "Não é permitido deletar a unidade matriz"
+      });
+    }
+
     // Verificar se a unidade existe
     const restaurantUnit = await getRestaurantUnitById(unitId);
     if (!restaurantUnit) {
-      return res.status(404).json({ message: "Unidade de restaurante não encontrada" });
+      return res.status(404).json({ message: "Unidade não encontrada" });
     }
 
     // Excluir a unidade
@@ -165,11 +259,10 @@ export const deleteRestaurantUnitController = async (
     return res.status(200).json({ message: "Unidade excluída com sucesso", deletedUnit });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "Erro ao excluir unidade de restaurante", error });
+    return res.status(500).json({ message: "Erro ao excluir unidade", error });
   }
 };
 
-// Controlador para adicionar um atendente a uma unidade
 export const addAttendantToUnitController = async (
   req: Request,
   res: Response
@@ -182,15 +275,23 @@ export const addAttendantToUnitController = async (
       return res.status(400).json({ message: "ID do atendente não fornecido" });
     }
 
+    // Verificar se é uma tentativa de adicionar à matriz
+    const restaurant = await RestaurantModel.findById(unitId);
+    if (restaurant) {
+      return res.status(400).json({
+        message: "Não é permitido adicionar atendentes diretamente à matriz"
+      });
+    }
+
     // Verificar se a unidade existe
     const restaurantUnit = await getRestaurantUnitById(unitId);
     if (!restaurantUnit) {
-      return res.status(404).json({ message: "Unidade de restaurante não encontrada" });
+      return res.status(404).json({ message: "Unidade não encontrada" });
     }
 
     // Adicionar atendente à unidade
     await updateRestaurantUnit(unitId, {
-      $addToSet: { attendants: attendantId } // Usa $addToSet para evitar duplicatas
+      $addToSet: { attendants: attendantId }
     });
 
     return res.status(200).json({ message: "Atendente adicionado com sucesso à unidade" });
@@ -200,7 +301,6 @@ export const addAttendantToUnitController = async (
   }
 };
 
-// Controlador para remover um atendente de uma unidade
 export const removeAttendantFromUnitController = async (
   req: Request,
   res: Response
@@ -208,10 +308,18 @@ export const removeAttendantFromUnitController = async (
   try {
     const { unitId, attendantId } = req.params;
 
+    // Verificar se é uma tentativa de remover da matriz
+    const restaurant = await RestaurantModel.findById(unitId);
+    if (restaurant) {
+      return res.status(400).json({
+        message: "Não é permitido remover atendentes da matriz"
+      });
+    }
+
     // Verificar se a unidade existe
     const restaurantUnit = await getRestaurantUnitById(unitId);
     if (!restaurantUnit) {
-      return res.status(404).json({ message: "Unidade de restaurante não encontrada" });
+      return res.status(404).json({ message: "Unidade não encontrada" });
     }
 
     // Remover atendente da unidade
@@ -225,3 +333,5 @@ export const removeAttendantFromUnitController = async (
     return res.status(500).json({ message: "Erro ao remover atendente da unidade", error });
   }
 };
+
+

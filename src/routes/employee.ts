@@ -5,7 +5,8 @@ import {
     getEmployeeByIdController,
     createEmployeeController,
     updateEmployeeController,
-    deleteEmployeeController
+    deleteEmployeeController,
+    getEmployeesByRestaurantController
 } from "../controllers/EmployeeController";
 import {
     isAuthenticated,
@@ -13,6 +14,14 @@ import {
 } from "../middlewares/index";
 
 export default (router: Router) => {
+    // Listar todos os funcionários de um restaurante (requer ser admin)
+    router.get(
+        "/restaurant/:id/employees",
+        isAuthenticated,
+        hasRole('ADMIN'),
+        getEmployeesByRestaurantController
+    );
+
     // Listar todos os funcionários de uma unidade (requer ser admin ou gerente)
     router.get(
         "/unit/:unitId/employees",
@@ -31,7 +40,7 @@ export default (router: Router) => {
 
     // Criar um novo funcionário (requer ser admin)
     router.post(
-        "/employee/create",
+        "/restaurant/:id/unit/:unitId/employee/create",
         isAuthenticated,
         hasRole('ADMIN'),
         createEmployeeController

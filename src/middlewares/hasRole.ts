@@ -3,7 +3,7 @@
 import { Request, Response, NextFunction } from "express";
 import { get } from "lodash";
 
-type UserRole = 'ADMIN' | 'MANAGER' | 'CLIENT';
+type UserRole = 'ADMIN' | 'MANAGER' | 'ATTENDANT' | 'CLIENT';
 
 interface AuthenticatedUser {
     role: UserRole;

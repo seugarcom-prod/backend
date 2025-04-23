@@ -1,8 +1,11 @@
 import mongoose from "mongoose";
+import { RestaurantModel } from "./Restaurant";
 const Schema = mongoose.Schema;
 
+// models/RestaurantUnit.ts
 export interface IRestaurantUnit extends Document {
   name: string;
+  isMatrix: boolean; // Novo campo
   address: {
     zipCode: string;
     street: string;
@@ -13,67 +16,61 @@ export interface IRestaurantUnit extends Document {
   socialName: string;
   manager: string;
   phone: string;
-  attendants: mongoose.Types.ObjectId[]; // Corrigido para array de ObjectId
+  attendants: mongoose.Types.ObjectId[];
   orders: mongoose.Types.ObjectId[];
-  restaurant: mongoose.Types.ObjectId; // Referência ao restaurante principal
+  restaurant: mongoose.Types.ObjectId;
   isActive: boolean;
 };
 
 const restaurantUnitSchema = new Schema({
-  name: {
-    type: String,
-    required: true
-  },
+  name: { type: String, required: true },
+  socialName: { type: String, required: true },
+  cnpj: { type: String, required: true },
+  phone: { type: String, required: true },
   address: {
-    zipCode: {
-      type: String,
-      required: false,
-    },
-    street: {
-      type: String,
-      required: false
-    },
-    number: {
-      type: Number,
-      required: false
-    },
-    complement: {
-      type: String,
-    }
+    street: { type: String, required: true },
+    number: { type: String, required: true },
+    complement: String,
+    zipCode: { type: String, required: true }
   },
-  cnpj: {
-    type: String,
-  },
-  socialName: {
-    type: String
-  },
-  manager: {
-    type: String,
-  },
-  phone: {
-    type: String,
-  },
-  attendants: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-  ],
-  orders: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "Order"
-    }
-  ],
+  businessHours: [{
+    days: [{ type: String }],
+    opens: String,
+    closes: String
+  }],
+  managers: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  }],
+  attendants: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  orders: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Order'
+  }],
   restaurant: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Restaurant",
+    type: Schema.Types.ObjectId,
+    ref: 'Restaurant',
     required: true
+  },
+  isMatrix: {
+    type: Boolean,
+    default: false
   },
   isActive: {
     type: Boolean,
     default: true
+  },
+  status: {
+    type: String,
+    enum: ['active', 'outOfHours', 'inactive'],
+    default: 'active'
   }
+}, {
+  timestamps: true
 });
 
 // Criar o modelo
@@ -94,6 +91,36 @@ export const getRestaurantUnitById = (id: string) =>
 // Get Restaurant Units by Restaurant Id
 export const getRestaurantUnitsByRestaurant = (restaurantId: string) =>
   RestaurantUnitModel.find({ restaurant: restaurantId });
+
+// Novo método para buscar unidades incluindo a matriz
+export const getRestaurantUnitsWithMatrix = async (restaurantId: string) => {
+  const restaurant = await RestaurantModel.findById(restaurantId);
+  if (!restaurant) return null;
+
+  // Criar unidade matriz
+  const matrixUnit = {
+    _id: restaurant._id,
+    name: `${restaurant.name} (Matriz)`,
+    isMatrix: true,
+    address: restaurant.address,
+    cnpj: restaurant.cnpj,
+    socialName: restaurant.socialName,
+    manager: restaurant.managers || [],
+    phone: restaurant.phone,
+    attendants: [],
+    orders: [],
+    restaurant: restaurant._id,
+    isActive: true
+  };
+
+  // Buscar unidades regulares
+  const regularUnits = await RestaurantUnitModel.find({
+    restaurant: restaurantId,
+    isMatrix: false
+  });
+
+  return [matrixUnit, ...regularUnits];
+};
 
 // Create Restaurant Unit
 export const createRestaurantUnit = (values: Record<string, any>) =>

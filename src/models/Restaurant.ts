@@ -20,8 +20,9 @@ export interface IRestaurant extends Document {
     fullName: string;
     cpf: string;
   };
-  units: mongoose.Types.ObjectId[];
+  managers: mongoose.Types.ObjectId[];
   attendants: mongoose.Types.ObjectId[];
+  units: mongoose.Types.ObjectId[];
   authentication: {
     password: string;
     salt: string;
@@ -61,9 +62,9 @@ const restaurantSchema = new Schema({
     salt: { type: String, required: true, select: false }, // Salt para a senha
     sessionToken: { type: String, select: false } // Token de sessão
   },
-
-  units: [{ type: Schema.Types.ObjectId, ref: 'RestaurantUnit' }],
+  managers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   attendants: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  units: [{ type: Schema.Types.ObjectId, ref: 'RestaurantUnit' }],
   businessHours: [{
     days: [String],
     open: String,

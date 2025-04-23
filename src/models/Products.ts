@@ -1,5 +1,6 @@
+// models/Products.ts (ajustado)
 import mongoose, { Document, Schema } from "mongoose";
-import { IRestaurant } from "./index"; // Certifique-se de que IRestaurant está corretamente definido
+import { IRestaurant } from "./index";
 
 export interface IProduct extends Document {
   restaurant: mongoose.Schema.Types.ObjectId | IRestaurant;
@@ -10,6 +11,12 @@ export interface IProduct extends Document {
   price: number;
   description: string;
   isAvailable: boolean;
+  // Novos campos para promoção
+  isOnPromotion: boolean;
+  promotionalPrice?: number;
+  discountPercentage?: number;
+  promotionStartDate?: Date;
+  promotionEndDate?: Date;
 }
 
 const productSchema = new Schema<IProduct>({
@@ -43,7 +50,46 @@ const productSchema = new Schema<IProduct>({
   description: {
     type: String,
   },
+  // Novos campos para promoção
+  isOnPromotion: {
+    type: Boolean,
+    default: false
+  },
+  promotionalPrice: {
+    type: Number
+  },
+  discountPercentage: {
+    type: Number
+  },
+  promotionStartDate: {
+    type: Date
+  },
+  promotionEndDate: {
+    type: Date
+  }
 });
+
+// Middleware para calcular preço promocional automaticamente quando o percentual de desconto for definido
+productSchema.pre('save', function (next) {
+  if (this.isOnPromotion && this.discountPercentage && this.price) {
+    this.promotionalPrice = this.price - (this.price * (this.discountPercentage / 100));
+  }
+  next();
+});
+
+// Middleware para verificar se a promoção expirou (pode ser chamado por um job agendado)
+productSchema.methods.checkPromotionValidity = function () {
+  const now = new Date();
+  if (this.isOnPromotion && this.promotionEndDate && now > this.promotionEndDate) {
+    this.isOnPromotion = false;
+    this.promotionalPrice = undefined;
+    this.discountPercentage = undefined;
+    this.promotionStartDate = undefined;
+    this.promotionEndDate = undefined;
+    return this.save();
+  }
+  return Promise.resolve(this);
+};
 
 export const ProductModel = mongoose.model<IProduct>("Product", productSchema);
 
@@ -51,6 +97,18 @@ export const ProductModel = mongoose.model<IProduct>("Product", productSchema);
 
 // Obter todos os produtos
 export const getProducts = () => ProductModel.find();
+
+// Obter produtos de um restaurante específico
+export const getProductsByRestaurant = (restaurantId: string) =>
+  ProductModel.find({ restaurant: restaurantId });
+
+// Obter produtos em promoção de um restaurante específico
+export const getPromotionalProducts = (restaurantId: string) =>
+  ProductModel.find({
+    restaurant: restaurantId,
+    isOnPromotion: true,
+    promotionEndDate: { $gt: new Date() }
+  });
 
 // Obter produto por ID
 export const getProductById = (id: string) => ProductModel.findById(id);

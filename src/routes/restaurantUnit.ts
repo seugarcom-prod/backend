@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-  addRestaurantUnitHandler,
+  addRestaurantUnitController,
   deleteRestaurantUnitController,
   getAllRestaurantUnitsController,
   getRestaurantUnitByIdController,
@@ -14,17 +14,9 @@ import { getRestaurantUnitOrdersController } from "../controllers/OrderControlle
 export default (restaurantUnitRouter: Router) => {
   restaurantUnitRouter.post(
     "/restaurant/:restaurantId/units/register",
-    hasRole("ADMIN"),
     isAuthenticated,
-    addRestaurantUnitHandler
-  );
-
-  // Para uma única role
-  restaurantUnitRouter.get(
-    "/units/:unitId",
-    isAuthenticated,
-    hasRole("ADMIN"),
-    getRestaurantUnitByIdController
+    hasRole(["ADMIN"]),
+    addRestaurantUnitController
   );
 
   // Para múltiplas roles
